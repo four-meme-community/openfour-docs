@@ -33,6 +33,10 @@ Integrations should distinguish between two identity layers:
 
 Use `OpenFourRegistry` as the recommended network-level entry address. Third parties only need to configure the Registry address for each chain, then read the current Core and Tools addresses from the Registry on-chain; read FeeRouter and wrapped native from Core.
 
+Known Registry addresses:
+
+- BNB Smart Chain mainnet: `0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+
 ```typescript
 const registry = new Contract(registryAddress, OpenFourRegistryAbi, provider);
 
@@ -45,26 +49,6 @@ const wrappedNative = await core.wrappedNative();
 ```
 
 With this approach, integrators do not need to hardcode multiple protocol addresses in the frontend or backend. When Core or Tools is updated by governance, the integration only needs to refresh on-chain reads as long as the Registry address remains unchanged.
-
-Deployment snapshots may still be used as initial configuration or as a fallback source:
-
-```text
-deployments/<network>.json
-```
-
-Common fields in the snapshot:
-
-- `addresses.core`
-- `addresses.tools`
-- `addresses.registry`
-- `addresses.feeRouter`
-- `addresses.wbnb`
-
-Recommended address read strategy:
-
-- Primary: configure `registry` and read `core` / `tools` / `feeRouter` / `wrappedNative` on-chain.
-- Fallback: use the address snapshot in `deployments/<network>.json`.
-- Validation: read `registry()` from Core and confirm it matches the locally configured Registry address.
 
 ## 3. Identifying OpenFour Tokens
 

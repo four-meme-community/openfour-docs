@@ -33,6 +33,10 @@ OpenFour 的核心寫入口是 `OpenFourCore`。第三方接入通常圍繞四�
 
 推薦把 `OpenFourRegistry` 作為網路級入口地址。第三方只需要為每條鏈配置 Registry 地址，然後從 Registry 鏈上讀取目前 Core 和 Tools 地址；再從 Core 讀取 FeeRouter 和 wrapped native。
 
+已知 Registry 地址：
+
+- BNB Smart Chain mainnet：`0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+
 ```typescript
 const registry = new Contract(registryAddress, OpenFourRegistryAbi, provider);
 
@@ -45,26 +49,6 @@ const wrappedNative = await core.wrappedNative();
 ```
 
 這樣接入方不需要在前端或後端硬編碼多個協議地址。Core 或 Tools 發生治理更新時，只要 Registry 地址不變，接入方重新整理鏈上讀取結果即可。
-
-部署快照仍可作為初始化配置或兜底來源：
-
-```text
-deployments/<network>.json
-```
-
-快照中常見欄位：
-
-- `addresses.core`
-- `addresses.tools`
-- `addresses.registry`
-- `addresses.feeRouter`
-- `addresses.wbnb`
-
-地址讀取建議：
-
-- 首選：配置 `registry`，鏈上讀取 `core` / `tools` / `feeRouter` / `wrappedNative`。
-- 兜底：使用 `deployments/<network>.json` 中的地址快照。
-- 校驗：從 Core 讀取 `registry()`，確認它與本地配置的 Registry 地址一致。
 
 ## 3. 識別 OpenFour 代幣
 
