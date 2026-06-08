@@ -6,8 +6,8 @@
  *   - Set REGISTRY_ADDRESS, PRESET_ID, TOOLS_ADDRESS (or use loadPresetSchemas)
  */
 import { JsonRpcProvider } from 'ethers'
-import { buildCreateTaxTokenRequest } from '../createTaxTokenRequest.js'
-import { resolvePresetCreateSchema } from '../resolvePresetCreateSchemas.js'
+import { buildCreateTaxTokenRequest } from '../create/buildCreatePayload.js'
+import { resolvePresetCreateSchema } from '../schema/resolvePresetCreateSchemas.js'
 
 const REGISTRY_ADDRESS = '0xYourRegistry'
 const PRESET_ID = '1778027615723' // custom tax preset example
@@ -27,7 +27,6 @@ async function main() {
 
   // Use on-chain schema field names (caller maps from app UI if needed).
   const taxInfo = {
-    router: '0xD99D1c33F9fC3444f8101754aBC46c52416550D1',
     buyFeeRate: 100,
     sellFeeRate: 100,
     rateFounder: 100,
@@ -49,11 +48,14 @@ async function main() {
       name: 'Demo Tax Token',
       shortName: 'DTT',
       desc: 'SDK example',
+      symbol: 'BNB',
       preSale: 0,
     },
-    raisedToken: {
-      nativeSymbol: 'BNB',
-      totalBAmount: '18',
+    templateConfig: {
+      symbol: 'BNB',
+      totalSupply: '1000000000',
+      saleAmount: '800000000',
+      raisedAmount: '18',
     },
     saleAmount: 800000000,
     totalSupply: 1000000000,

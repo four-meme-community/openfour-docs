@@ -1,5 +1,5 @@
-import { encodeModuleParams } from './encodeFromSchema.js'
-import { isTaxTokenModuleTag } from './moduleTags.js'
+import { encodeModuleParams } from '../schema/encodeFromSchema.js'
+import { isTaxTokenModuleTag } from '../tags/moduleTags.js'
 
 const ZERO_HASH =
   '0x0000000000000000000000000000000000000000000000000000000000000000'
@@ -17,8 +17,8 @@ export function resolvePresaleQuote(sources = {}) {
 /**
  * Build the backend request payload for token creation (POST body + initParams encoding).
  *
- * Module param values (buyFeeRate, router, etc.) must be set on `taxInfo` by
- * the caller — no HTML/form layer; integrator maps UI to schema field names.
+ * Module param values (buyFeeRate, founder, taxVaultTypeId, etc.) must be set on `taxInfo` by
+ * the caller - no HTML/form layer; integrator maps UI to schema field names.
  *
  * This only assembles params and does not handle image uploading.
  * Pass the final avatar URL via `imgUrl`.
@@ -29,7 +29,7 @@ export function buildCreateTaxTokenRequest(input) {
     taxInfo = {},
     createParams = {},
     schemas,
-    raisedToken = {},
+    templateConfig = {},
     activeParam = [],
     tokenModuleTag = '',
     vaultSelection = { typeId: ZERO_HASH, initParamsHex: '0x' },
@@ -81,10 +81,10 @@ export function buildCreateTaxTokenRequest(input) {
     imgUrl,
     name: createParams.name ?? '',
     shortName: createParams.shortName ?? '',
-    symbol: createParams.symbol ?? raisedToken.nativeSymbol ?? '',
-    raisedAmount: createParams.raisedAmount ?? raisedToken.totalBAmount ?? 0,
+    symbol: createParams.symbol ?? templateConfig.symbol ?? '',
+    raisedAmount: createParams.raisedAmount ?? createParams.raiseAmount ?? templateConfig.raisedAmount ?? 0,
     saleAmount: createParams.saleAmount ?? saleAmount,
-    totalSupply: createParams.totalSupply ?? totalSupply,
+    totalSupply: createParams.totalSupply ?? createParams.maxSupply ?? templateConfig.totalSupply ?? totalSupply,
     presaleQuote,
     feePlan: createParams.feePlan ?? feePlan,
     initParams: {

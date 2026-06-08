@@ -1,28 +1,21 @@
 import {
   prepareCreateTokenOnChain,
   submitCreateTokenOnChain,
-} from './createTokenOnChain.js'
-
-export function assertBackendCreateData(data) {
-  if (!data || typeof data !== 'object') {
-    throw new Error('create API: missing data in response')
-  }
-  const { createArg: rawCreateArg, signature } = data
-  if (!rawCreateArg || rawCreateArg === '0x') {
-    throw new Error('create API: missing or empty createArg in data')
-  }
-  if (!signature || signature === '0x') {
-    throw new Error('create API: missing or empty signature in data')
-  }
-  return data
-}
+} from './createOnChain.js'
+import { normalizeBackendCreateData } from './createResponse.js'
 
 /**
  * Backend create API + on-chain createToken (preset-agnostic).
  *
+ * `postCreate` should return a normalized response:
+ *   { code: 0, data: { createArg, signature, tokenId?, tokenAddress? }, msg?: string }
+ *
+ * Business-specific API adapters (for example Four.meme) should normalize their
+ * own response shapes before passing data into this generic flow.
+ *
  * @param {object} options
  * @param {object|Function} options.buildPayload - POST body object, or async () => body
- * @param {Function} options.postCreate - async (payload) => ({ code, data, msg })
+ * @param {Function} options.postCreate - async (payload) => normalized create API response
  * @param {import('ethers').Signer} options.signer
  * @param {string} options.coreAddress - OpenFourCore address
  * @param {string} [options.wrappedNative] - WBNB/WETH for txValue calculation
@@ -59,8 +52,8 @@ export async function createTokenWithBackendAndChain({
     throw new Error(apiRes?.msg || `create API failed (code=${apiRes?.code})`)
   }
 
-  const data = assertBackendCreateData(apiRes.data)
-  const { createArg: rawCreateArg, signature, tokenId } = data
+  const data = normalizeBackendCreateData(apiRes.data)
+  const { createArg: rawCreateArg, signature, tokenId, tokenAddress } = data
 
   const prepared = prepareCreateTokenOnChain({
     rawCreateArg,
@@ -76,5 +69,5 @@ export async function createTokenWithBackendAndChain({
     simulate,
   })
 
-  return { payload, tokenId, ...prepared, ...onChain }
+  return { payload, tokenId, tokenAddress, ...prepared, ...onChain }
 }

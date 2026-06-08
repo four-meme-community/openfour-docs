@@ -18,7 +18,7 @@ For full protocol details, see [`integration-guide.md`](../integration-guide.md)
 | Read preset and create schemas | `resolvePresetCreateSchema`, `buildCreateFormPlan` | `examples/04-list-preset-create-schemas.example.mjs` |
 | Build backend create request | `buildCreateTaxTokenRequest`, `encodeModuleParams` | `examples/01-build-backend-payload.example.mjs` |
 | Submit `createToken` | `prepareCreateTokenOnChain`, `submitCreateTokenOnChain` | `examples/02-submit-onchain.example.mjs` |
-| Backend API + on-chain | `createTokenWithBackendAndChain` | `examples/03-create-tax-token-with-backend.example.mjs` |
+| Four.meme API + on-chain | `createFourMemeApiClient`, `createTokenWithBackendAndChain` | `examples/03-create-tax-token-with-backend.example.mjs` |
 | Trade estimate and submit | `estimateBuyExactAmount`, `buildBuyExactAmountTx`, `submitTradeTx` | `examples/06-trade-with-slippage.example.mjs` |
 | Parse `encodedTags` | `parseCreationEncodedTags` | `examples/05-parse-encoded-tags.example.mjs` |
 | Mine Uni V4 `hookSalt` | `mineUniHookCloneSalt`, `ensureHookSaltAvailable` | `examples/07-mine-uni-hook-salt.example.mjs` |
@@ -30,18 +30,27 @@ abi/                          # Bundled contract ABIs (JSON)
 examples/                     # Standalone examples (.mjs)
 scripts/
   verify-create-args.mjs      # Verify createArg encode/decode (optional)
-createTaxTokenRequest.js        # Build backend POST body
-createTokenOnChain.js           # On-chain createToken
-createTokenWithBackend.js       # Backend API + on-chain (generic)
-createTaxTokenWithBackend.js    # Tax preset convenience flow
-createArgCodec.js               # Decode/normalize backend createArg
-encodeFromSchema.js             # Schema encode/decode
-schemaLayout.js                 # Schema field layout/default helpers
-tradeFlow.js                    # Estimate, slippage, approval, and trade helpers
-loadPresetSchemas.js            # Read Tools/Registry on-chain
-resolvePresetCreateSchemas.js   # Resolve create schema per preset
-encodedTags.js                  # Parse TokenCreated.encodedTags
-mineUniHookCloneSalt.js         # Mine Uni V4 hook CREATE2 salt
+api/
+  fourMemeClient.js           # Four.meme login/upload/create API adapter
+create/
+  buildCreatePayload.js       # Build backend POST body
+  createArgCodec.js           # Decode/normalize backend createArg
+  createFlow.js               # Backend API + on-chain (generic)
+  createOnChain.js            # On-chain createToken
+  createResponse.js           # Normalized create API response validation
+  createTaxTokenFlow.js       # Tax preset convenience flow
+schema/
+  encodeFromSchema.js         # Schema encode/decode
+  loadPresetSchemas.js        # Read Tools/Registry on-chain
+  resolvePresetCreateSchemas.js # Resolve create schema per preset
+  schemaLayout.js             # Schema field layout/default helpers
+tags/
+  encodedTags.js              # Parse TokenCreated.encodedTags
+  moduleTags.js               # Token module tag helpers
+trade/
+  tradeFlow.js                # Estimate, slippage, approval, and trade helpers
+uni/
+  mineUniHookCloneSalt.js     # Mine Uni V4 hook CREATE2 salt
 index.js                        # Public exports
 ```
 
@@ -92,11 +101,17 @@ const plan = buildCreateFormPlan({
   baseSchema: one.baseSchema,
   schemas: one.schemas,
   activeParams: one.activeParams,
-  quoteAsset: '0x...',
+  quoteAsset: '0x...',      // selected ERC20 quote asset
+  templateConfig: {
+    symbol: 'BNB',
+    totalSupply: '1000000000',
+    saleAmount: '800000000',
+    raisedAmount: '18',
+  },
 })
 
 // plan.fields        — display-ready field metadata
-// plan.defaults      — initial form data with schema defaults
+// plan.defaults      — schema defaults plus template config defaults
 // plan.sections      — fields grouped by base/token/curve/trade/migrate/customData
 ```
 
@@ -159,23 +174,36 @@ await submitCreateTokenOnChain({ signer, coreAddress, createArg, signature, txVa
 
 #### B3) Backend + on-chain
 
-See `examples/03-create-tax-token-with-backend.example.mjs`
+See `examples/03-create-tax-token-with-backend.example.mjs`. The example performs:
+
+1. `nonce/generate` + wallet `signMessage` + `login/dex`
+2. `token/upload` to obtain the final `imgUrl`
+3. `token_template/token/create` to obtain `createArg` + `signature`
+4. `OpenFourCore.createToken(createArg, signature)`
 
 ```js
-import { createTaxTokenWithBackendAndChain } from './createTaxTokenWithBackend.js'
+import {
+  createFourMemeApiClient,
+  createTaxTokenWithBackendAndChain,
+} from './index.js'
 
+const api = createFourMemeApiClient()
+const { accessToken } = await api.loginWithSigner({ signer })
+const imgUrl = await api.uploadTokenImage({ accessToken, file, filename })
 await createTaxTokenWithBackendAndChain({
-  buildRequest: { /* buildCreateTaxTokenRequest input */ },
-  postCreate,
+  buildRequest: { /* buildCreateTaxTokenRequest input, including imgUrl */ },
+  postCreate: (payload) => api.postCreate(payload, { accessToken }),
   signer,
   coreAddress,
   wrappedNative: '0x...',
 })
 
 // Generic (any POST body):
-import { createTokenWithBackendAndChain } from './createTokenWithBackend.js'
+import { createTokenWithBackendAndChain } from './index.js'
 await createTokenWithBackendAndChain({ buildPayload: payload, postCreate, signer, coreAddress })
 ```
+
+`createFourMemeApiClient` uses `/private/token_template/token/create`, matching this OpenFour integration guide.
 
 ### C. Internal-market trading
 
@@ -275,6 +303,8 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 | `prepareCreateTokenOnChain` | Normalize createArg; compute txValue (aligned with contract) |
 | `isPresaleNative` / `computeCreateTokenTxValue` | Presale native vs ERC20 payment helpers |
 | `submitCreateTokenOnChain` | Call OpenFourCore.createToken |
+| `createFourMemeApiClient` | Four.meme nonce/login, image upload, and normalized create API client |
+| `normalizeFourMemeCreateResponse` | Convert Four.meme `data[]` / string code response into the generic create response shape |
 | `createTokenWithBackendAndChain` | Generic: POST body + on-chain |
 | `createTaxTokenWithBackendAndChain` | Helper: buildCreateTaxTokenRequest + POST + on-chain |
 
@@ -313,7 +343,8 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 
 - Uni V4 presets require a non-zero pre-mined `hookSalt`; see `mineUniHookCloneSalt` and `examples/07-mine-uni-hook-salt.example.mjs`
 - Tax presets do **not** inject `hookSalt`
-- Preset module fields (`buyFeeRate`, `router`, `founder`, etc.) must be provided on `taxInfo` by the integrator
+- Template config from `/public/token_template/config` should prefill `maxSupply`, `saleAmount`, and `raiseAmount`; module fields still come from on-chain schemas
+- Preset module fields (`buyFeeRate`, `founder`, `taxVaultTypeId`, etc.) must be provided on `taxInfo` by the integrator
 - Backend presale: `createParams.presaleQuote` or `createParams.preSale` (see `resolvePresaleQuote`)
 - `createArg` tuple layout for decoding is in `abi/createTokenArgsCodec.json` (backend bytes layout, not a contract artifact entry)
 - **msg.value**: `createFee` is always native. `presaleQuote` is added to `msg.value` only when `quoteAsset == wrappedNative` and `presaleQuote > 0`; ERC20 presale still requires `msg.value >= createFee`

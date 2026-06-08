@@ -11,9 +11,9 @@ import {
   isUniTokenModuleTag,
   TAX_TOKEN_MODULE_TAG,
   UNI_TOKEN_MODULE_TAG,
-} from './moduleTags.js'
+} from '../tags/moduleTags.js'
 
-export { TAX_TOKEN_MODULE_TAG, UNI_TOKEN_MODULE_TAG } from './moduleTags.js'
+export { TAX_TOKEN_MODULE_TAG, UNI_TOKEN_MODULE_TAG } from '../tags/moduleTags.js'
 
 /**
  * SDK-only UI grouping for create flows. Not stored on OpenFour contracts.
@@ -26,7 +26,7 @@ export { TAX_TOKEN_MODULE_TAG, UNI_TOKEN_MODULE_TAG } from './moduleTags.js'
  * | tax         | `module.token.tax` |
  * | generic     | e.g. `module.token.standard` |
  *
- * Priority: uni_v4 → tax → generic. Prefer `preset.tokenModuleTag` over `mode`.
+ * Priority: uni_v4 -> tax -> generic. Prefer `preset.tokenModuleTag` over `mode`.
  */
 export const CREATE_MODE = {
   TAX: 'tax',
@@ -94,7 +94,7 @@ function isZeroBytes32(value) {
 }
 
 /**
- * Params for SchemaDrivenForm — excludes vault fields and auto-mined hookSalt.
+ * Params for SchemaDrivenForm - excludes vault fields and auto-mined hookSalt.
  */
 export function getDisplayParams(activeParams) {
   return activeParams.filter(

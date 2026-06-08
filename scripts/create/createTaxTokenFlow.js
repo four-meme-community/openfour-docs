@@ -1,12 +1,12 @@
-import { buildCreateTaxTokenRequest } from './createTaxTokenRequest.js'
-import { createTokenWithBackendAndChain } from './createTokenWithBackend.js'
+import { buildCreateTaxTokenRequest } from './buildCreatePayload.js'
+import { createTokenWithBackendAndChain } from './createFlow.js'
 
 /**
  * Convenience wrapper: buildCreateTaxTokenRequest + backend API + on-chain createToken.
  *
  * @param {object} options
  * @param {object} options.buildRequest - input for buildCreateTaxTokenRequest
- * @param {Function} options.postCreate - async (payload) => ({ code, data, msg })
+ * @param {Function} options.postCreate - async (payload) => normalized create API response
  * @param {import('ethers').Signer} options.signer
  * @param {string} options.coreAddress
  * @param {string} [options.wrappedNative]

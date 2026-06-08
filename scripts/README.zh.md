@@ -18,7 +18,7 @@ OpenFour 第三方接入 JavaScript helper，用於錢包、交易 UI、發射�
 | 讀取 preset 與建立 schema | `resolvePresetCreateSchema`、`buildCreateFormPlan` | `examples/04-list-preset-create-schemas.example.mjs` |
 | 組裝後端建立請求 | `buildCreateTaxTokenRequest`、`encodeModuleParams` | `examples/01-build-backend-payload.example.mjs` |
 | 提交 `createToken` | `prepareCreateTokenOnChain`、`submitCreateTokenOnChain` | `examples/02-submit-onchain.example.mjs` |
-| 後端 API + 上鏈 | `createTokenWithBackendAndChain` | `examples/03-create-tax-token-with-backend.example.mjs` |
+| Four.meme API + 上鏈 | `createFourMemeApiClient`、`createTokenWithBackendAndChain` | `examples/03-create-tax-token-with-backend.example.mjs` |
 | 交易預估與提交 | `estimateBuyExactAmount`、`buildBuyExactAmountTx`、`submitTradeTx` | `examples/06-trade-with-slippage.example.mjs` |
 | 解析 `encodedTags` | `parseCreationEncodedTags` | `examples/05-parse-encoded-tags.example.mjs` |
 | 挖掘 Uni V4 `hookSalt` | `mineUniHookCloneSalt`、`ensureHookSaltAvailable` | `examples/07-mine-uni-hook-salt.example.mjs` |
@@ -30,18 +30,27 @@ abi/                          # 隨包提供的合約 ABI（JSON）
 examples/                     # 獨立示例（.mjs）
 scripts/
   verify-create-args.mjs      # 校驗 createArg 編解碼（可選）
-createTaxTokenRequest.js        # 組裝後端 POST body
-createTokenOnChain.js           # 鏈上 createToken
-createTokenWithBackend.js       # 後端 API + 上鏈（通用）
-createTaxTokenWithBackend.js    # 稅費 preset 便捷流程
-createArgCodec.js               # 解碼 / 規範化 backend createArg
-encodeFromSchema.js             # schema 編解碼
-schemaLayout.js                 # schema 欄位布局與預設值 helper
-tradeFlow.js                    # 預估、滑點、授權與交易 helper
-loadPresetSchemas.js            # 鏈上讀 Tools / Registry
-resolvePresetCreateSchemas.js   # 按 preset 解析建立 schema
-encodedTags.js                  # 解析 TokenCreated.encodedTags
-mineUniHookCloneSalt.js         # 挖掘 Uni V4 hook CREATE2 salt
+api/
+  fourMemeClient.js           # Four.meme 登入、上傳、create API adapter
+create/
+  buildCreatePayload.js       # 組裝後端 POST body
+  createArgCodec.js           # 解碼 / 規範化 backend createArg
+  createFlow.js               # 後端 API + 上鏈（通用）
+  createOnChain.js            # 鏈上 createToken
+  createResponse.js           # 標準 create API 回應校驗
+  createTaxTokenFlow.js       # 稅費 preset 便捷流程
+schema/
+  encodeFromSchema.js         # schema 編解碼
+  loadPresetSchemas.js        # 鏈上讀 Tools / Registry
+  resolvePresetCreateSchemas.js # 按 preset 解析建立 schema
+  schemaLayout.js             # schema 欄位布局與預設值 helper
+tags/
+  encodedTags.js              # 解析 TokenCreated.encodedTags
+  moduleTags.js               # token module tag helper
+trade/
+  tradeFlow.js                # 預估、滑點、授權與交易 helper
+uni/
+  mineUniHookCloneSalt.js     # 挖掘 Uni V4 hook CREATE2 salt
 index.js                        # 對外匯出
 ```
 
@@ -92,11 +101,17 @@ const plan = buildCreateFormPlan({
   baseSchema: one.baseSchema,
   schemas: one.schemas,
   activeParams: one.activeParams,
-  quoteAsset: '0x...',
+  quoteAsset: '0x...',      // 選定的 ERC20 quote asset
+  templateConfig: {
+    symbol: 'BNB',
+    totalSupply: '1000000000',
+    saleAmount: '800000000',
+    raisedAmount: '18',
+  },
 })
 
 // plan.fields        — 可直接用於渲染的欄位元資訊
-// plan.defaults      — 帶 schema 預設值的初始表單資料
+// plan.defaults      — schema 預設值 + template config 預設值
 // plan.sections      — 按 base/token/curve/trade/migrate/customData 分組
 ```
 
@@ -159,23 +174,36 @@ await submitCreateTokenOnChain({ signer, coreAddress, createArg, signature, txVa
 
 #### B3) 後端 + 上鏈
 
-見 `examples/03-create-tax-token-with-backend.example.mjs`
+見 `examples/03-create-tax-token-with-backend.example.mjs`。示例流程包含：
+
+1. `nonce/generate` + 錢包 `signMessage` + `login/dex`
+2. `token/upload` 取得最終 `imgUrl`
+3. `token_template/token/create` 取得 `createArg` + `signature`
+4. `OpenFourCore.createToken(createArg, signature)`
 
 ```js
-import { createTaxTokenWithBackendAndChain } from './createTaxTokenWithBackend.js'
+import {
+  createFourMemeApiClient,
+  createTaxTokenWithBackendAndChain,
+} from './index.js'
 
+const api = createFourMemeApiClient()
+const { accessToken } = await api.loginWithSigner({ signer })
+const imgUrl = await api.uploadTokenImage({ accessToken, file, filename })
 await createTaxTokenWithBackendAndChain({
-  buildRequest: { /* buildCreateTaxTokenRequest 入參 */ },
-  postCreate,
+  buildRequest: { /* buildCreateTaxTokenRequest 入參，包含 imgUrl */ },
+  postCreate: (payload) => api.postCreate(payload, { accessToken }),
   signer,
   coreAddress,
   wrappedNative: '0x...',
 })
 
 // 通用（任意 POST body）:
-import { createTokenWithBackendAndChain } from './createTokenWithBackend.js'
+import { createTokenWithBackendAndChain } from './index.js'
 await createTokenWithBackendAndChain({ buildPayload: payload, postCreate, signer, coreAddress })
 ```
+
+`createFourMemeApiClient` 使用 `/private/token_template/token/create`，與本 OpenFour 接入文檔一致。
 
 ### C. 內盤交易
 
@@ -275,6 +303,8 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 | `prepareCreateTokenOnChain` | 規範化 createArg，計算 txValue（與合約一致） |
 | `isPresaleNative` / `computeCreateTokenTxValue` | 預購原生 / ERC20 付款判斷 |
 | `submitCreateTokenOnChain` | 呼叫 OpenFourCore.createToken |
+| `createFourMemeApiClient` | Four.meme nonce/login、圖片上傳與標準化 create API client |
+| `normalizeFourMemeCreateResponse` | 將 Four.meme `data[]` / string code 回應轉成通用 create response |
 | `createTokenWithBackendAndChain` | 通用：POST body + 上鏈 |
 | `createTaxTokenWithBackendAndChain` | 稅費：buildCreateTaxTokenRequest + POST + 上鏈 |
 
@@ -313,7 +343,8 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 
 - Uni V4 preset 的 `hookSalt` 必須非零，且須鏈下預挖；見 `mineUniHookCloneSalt` 與 `examples/07-mine-uni-hook-salt.example.mjs`
 - 稅費類 preset **不包含** `hookSalt`
-- 各 preset 的模組欄位（`buyFeeRate`、`router`、`founder` 等）須由整合方寫入 `taxInfo`
+- `/public/token_template/config` 返回的 template config 應用於預填 `maxSupply`、`saleAmount`、`raiseAmount`；模組專屬欄位仍來自鏈上 schema
+- 各 preset 的模組欄位（`buyFeeRate`、`founder`、`taxVaultTypeId` 等）須由整合方寫入 `taxInfo`
 - 後端預購欄位：`createParams.presaleQuote` 或 `createParams.preSale`（見 `resolvePresaleQuote`）
 - `createArg` 的 tuple 解碼布局在 `abi/createTokenArgsCodec.json`（backend 返回的 bytes 結構，非合約 artifact 條目）
 - **msg.value**：`createFee` 永遠用原生幣支付；僅當 `quoteAsset == wrappedNative` 且 `presaleQuote > 0` 時，`msg.value` 還需加上 `presaleQuote`；ERC20 預購時 `msg.value` 仍至少為 `createFee`

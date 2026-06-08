@@ -34,7 +34,7 @@ export function decodeCreationEncodedTags(encodedTags) {
 
   if (bytes.length !== CREATION_TAGS_LENGTH) {
     throw new Error(
-      `decodeCreationEncodedTags: expected ${CREATION_TAGS_LENGTH} bytes, got ${bytes.length}`
+      `decodeCreationEncodedTags: expected ${CREATION_TAGS_LENGTH} bytes, got ${bytes.length}`,
     )
   }
 

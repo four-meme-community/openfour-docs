@@ -26,7 +26,7 @@ import {
   isNativeQuoteAsset,
   parseTokenAmount,
   submitTradeTx,
-} from '../tradeFlow.js'
+} from '../trade/tradeFlow.js'
 
 const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS

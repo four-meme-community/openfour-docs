@@ -1,37 +1,51 @@
 /**
- * Example: build payload → POST backend → createToken on chain (tax preset).
+ * Example: Four.meme login → upload image → build payload → POST create API
+ * → createToken on chain (tax preset).
  *
- * Uses createTaxTokenWithBackendAndChain (see createTaxTokenWithBackend.js).
+ * Env:
+ *   PRIVATE_KEY, REGISTRY_ADDRESS, OPEN_FOUR_CORE, PRESET_ID, WRAPPED_NATIVE
+ *   IMAGE_PATH (or IMAGE_URL), TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DESC
+ *   Optional: FOUR_MEME_API_BASE, RPC_URL, QUOTE_SYMBOL
  */
 import { JsonRpcProvider, Wallet } from 'ethers'
-import { createTaxTokenWithBackendAndChain } from '../createTaxTokenWithBackend.js'
-import { loadPresetSchemas } from '../loadPresetSchemas.js'
+import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
+import { createFourMemeApiClient } from '../api/fourMemeClient.js'
+import { createTaxTokenWithBackendAndChain } from '../create/createTaxTokenFlow.js'
+import { loadPresetSchemas } from '../schema/loadPresetSchemas.js'
 
-const RPC_URL = 'https://bsc-testnet.publicnode.com'
+const RPC_URL = process.env.RPC_URL ?? 'https://bsc-testnet.publicnode.com'
 const PRIVATE_KEY = process.env.PRIVATE_KEY
-const REGISTRY_ADDRESS = '0xYourRegistry'
-const OPEN_FOUR_CORE = '0xYourOpenFourCore'
+const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS ?? '0xYourRegistry'
+const OPEN_FOUR_CORE = process.env.OPEN_FOUR_CORE ?? '0xYourOpenFourCore'
 const WRAPPED_NATIVE = process.env.WRAPPED_NATIVE
-const PRESET_ID = '1778027615723'
-
-async function postCreate(payload) {
-  // Expected response shape:
-  //   { code: 0, data: { createArg, signature, tokenId }, msg: "" }
-  const res = await fetch('https://api.example.com/v1/private/token_template/token/create', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  })
-  return res.json()
-}
+const PRESET_ID = process.env.PRESET_ID ?? '1778027615723'
+const IMAGE_PATH = process.env.IMAGE_PATH
+const IMAGE_URL = process.env.IMAGE_URL
+const QUOTE_SYMBOL = process.env.QUOTE_SYMBOL
 
 async function main() {
   if (!PRIVATE_KEY) throw new Error('Set PRIVATE_KEY')
+  if (!IMAGE_PATH && !IMAGE_URL) throw new Error('Set IMAGE_PATH or IMAGE_URL')
 
   const provider = new JsonRpcProvider(RPC_URL)
   const signer = new Wallet(PRIVATE_KEY, provider)
+  const api = createFourMemeApiClient({
+    apiBase: process.env.FOUR_MEME_API_BASE,
+  })
+  const { accessToken, address } = await api.loginWithSigner({ signer })
+  const templateConfig = await api.getTokenTemplateConfig({
+    templateId: PRESET_ID,
+    symbol: QUOTE_SYMBOL,
+  })
+  const imgUrl =
+    IMAGE_URL ??
+    (await api.uploadTokenImage({
+      accessToken,
+      file: readFileSync(IMAGE_PATH),
+      filename: basename(IMAGE_PATH),
+    }))
+
   const { schemas } = await loadPresetSchemas({
     registryAddress: REGISTRY_ADDRESS,
     presetId: PRESET_ID,
@@ -57,26 +71,25 @@ async function main() {
         rateHolder: 0,
         rateLiquidity: 0,
         minShare: 1000000,
-        founder: await signer.getAddress(),
+        founder: address,
       },
       activeParam,
-      imgUrl: 'https://cdn.example.com/avatar.png',
+      imgUrl,
       createParams: {
-        name: 'Full Flow Token',
-        shortName: 'FFT',
-        desc: 'SDK full flow',
+        name: process.env.TOKEN_NAME ?? 'Full Flow Token',
+        shortName: process.env.TOKEN_SYMBOL ?? 'FFT',
+        symbol: templateConfig.symbol,
+        desc: process.env.TOKEN_DESC ?? 'SDK full flow',
         preSale: 0,
       },
-      raisedToken: { nativeSymbol: 'BNB', totalBAmount: '18' },
-      saleAmount: 800000000,
-      totalSupply: 1000000000,
+      templateConfig,
       vaultSelection: {
         typeId:
           '0x0000000000000000000000000000000000000000000000000000000000000000',
         initParamsHex: '0x',
       },
     },
-    postCreate,
+    postCreate: (payload) => api.postCreate(payload, { accessToken }),
     signer,
     coreAddress: OPEN_FOUR_CORE,
     wrappedNative: WRAPPED_NATIVE,

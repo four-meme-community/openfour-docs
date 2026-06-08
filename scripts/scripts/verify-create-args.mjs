@@ -10,13 +10,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AbiCoder, JsonRpcProvider, ZeroHash } from 'ethers'
-import { buildCreateTaxTokenRequest } from '../createTaxTokenRequest.js'
-import { decodeModuleParams, encodeModuleParams } from '../encodeFromSchema.js'
-import { normalizeCreateArg, computeCreateTokenTxValue } from '../createArgCodec.js'
+import { buildCreateTaxTokenRequest } from '../create/buildCreatePayload.js'
+import { normalizeCreateArg, computeCreateTokenTxValue } from '../create/createArgCodec.js'
+import { decodeModuleParams, encodeModuleParams } from '../schema/encodeFromSchema.js'
 import {
   resolveAllPresetCreateSchemas,
   resolvePresetCreateSchema,
-} from '../resolvePresetCreateSchemas.js'
+} from '../schema/resolvePresetCreateSchemas.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '../..')
@@ -134,15 +134,19 @@ async function verifyTaxPreset({ registry, wbnb, provider, presetId }) {
     createParams: {
       name: 'SDK Verify Token',
       shortName: 'SVT',
+      symbol: 'BNB',
       preSale: 0,
     },
     vaultSelection: {
       typeId: ZeroHash,
       initParamsHex: '0x',
     },
-    raisedToken: { nativeSymbol: 'BNB', totalBAmount: '18' },
-    saleAmount: 800000000,
-    totalSupply: 1000000000,
+    templateConfig: {
+      symbol: 'BNB',
+      totalSupply: '1000000000',
+      saleAmount: '800000000',
+      raisedAmount: '18',
+    },
   })
 
   assert(payload.presaleQuote === 0, 'preSale should map to presaleQuote 0')

@@ -1,5 +1,5 @@
 import { AbiCoder } from 'ethers'
-import codecConfig from './abi/createTokenArgsCodec.json' with { type: 'json' }
+import codecConfig from '../abi/createTokenArgsCodec.json' with { type: 'json' }
 
 const coder = AbiCoder.defaultAbiCoder()
 

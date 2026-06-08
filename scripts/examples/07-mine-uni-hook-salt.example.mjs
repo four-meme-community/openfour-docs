@@ -14,7 +14,7 @@
  */
 import { Contract, JsonRpcProvider } from 'ethers'
 import OpenFourRegistryAbi from '../abi/OpenFourRegistry.json' with { type: 'json' }
-import { mineUniHookCloneSalt } from '../mineUniHookCloneSalt.js'
+import { mineUniHookCloneSalt } from '../uni/mineUniHookCloneSalt.js'
 
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS
 const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'

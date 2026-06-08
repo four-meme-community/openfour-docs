@@ -1,5 +1,5 @@
 import { Contract } from 'ethers'
-import OpenFourCoreAbi from './abi/OpenFourCore.json' with { type: 'json' }
+import OpenFourCoreAbi from '../abi/OpenFourCore.json' with { type: 'json' }
 import {
   computeCreateTokenTxValue,
   isPresaleNative,

@@ -1,4 +1,3 @@
-import { ZeroAddress } from 'ethers'
 import { defaultFormDataFromSchema } from './encodeFromSchema.js'
 import { AUTO_MINED_PARAM_NAMES, VAULT_PARAM_NAMES } from './resolvePresetCreateSchemas.js'
 
@@ -6,9 +5,6 @@ export const OUTER_CREATE_DEFAULTS = {
   createFee: '0',
   presaleQuote: '0',
 }
-
-export const DEFAULT_BSC_TESTNET_PANCAKE_V2_ROUTER =
-  '0xD99D1c33F9fC3444f8101754aBC46c52416550D1'
 
 export const MODULE_PARAM_GROUPS = ['base', 'token', 'vault', 'curve', 'trade', 'migrate', 'customData']
 
@@ -89,35 +85,32 @@ export function buildLayoutSections(baseSchema, schemas, { includeHidden = false
     .filter((section) => section.params.length > 0 || section.fields.length > 0)
 }
 
+export function formDataFromTemplateConfig(templateConfig) {
+  const cfg = Array.isArray(templateConfig) ? templateConfig[0] : templateConfig
+  if (!cfg || typeof cfg !== 'object') return {}
+
+  const out = {}
+  if (cfg.totalSupply != null && cfg.totalSupply !== '') out.maxSupply = String(cfg.totalSupply)
+  if (cfg.saleAmount != null && cfg.saleAmount !== '') out.saleAmount = String(cfg.saleAmount)
+  if (cfg.raisedAmount != null && cfg.raisedAmount !== '') out.raiseAmount = String(cfg.raisedAmount)
+  return out
+}
+
 export function buildInitialFormData(params, {
   quoteAsset,
-  router = DEFAULT_BSC_TESTNET_PANCAKE_V2_ROUTER,
+  templateConfig,
   includeOuterCreateDefaults = true,
-  saleAmountRatioWhenFullSupply = 0.8,
 } = {}) {
   const defaults = defaultFormDataFromSchema(params)
-
-  if (
-    defaults.saleAmount &&
-    defaults.maxSupply &&
-    defaults.saleAmount === defaults.maxSupply &&
-    saleAmountRatioWhenFullSupply > 0 &&
-    saleAmountRatioWhenFullSupply < 1
-  ) {
-    const maxSupply = Number(defaults.maxSupply)
-    if (Number.isFinite(maxSupply)) {
-      defaults.saleAmount = String(Math.floor(maxSupply * saleAmountRatioWhenFullSupply))
-    }
-  }
+  const templateDefaults = formDataFromTemplateConfig(templateConfig)
 
   const form = {
     ...(includeOuterCreateDefaults ? OUTER_CREATE_DEFAULTS : {}),
     ...defaults,
+    ...templateDefaults,
   }
 
   if (quoteAsset) form.quoteAsset = quoteAsset
-  if (params.some((p) => p.name === 'router')) form.router = router
-  if (params.some((p) => p.name === 'taxTreasury')) form.taxTreasury = ''
 
   return form
 }
@@ -143,7 +136,8 @@ export function buildCreateFormPlan({
   baseSchema,
   schemas,
   activeParams,
-  quoteAsset = ZeroAddress,
+  quoteAsset,
+  templateConfig,
   includeHidden = false,
 } = {}) {
   const params = activeParams ?? [
@@ -159,7 +153,7 @@ export function buildCreateFormPlan({
     displayParams: getDisplayParams(params),
     fields: buildFieldModels(params, { includeHidden }),
     sections: buildLayoutSections(baseSchema ?? [], schemas ?? {}, { includeHidden }),
-    defaults: buildInitialFormData(params, { quoteAsset }),
+    defaults: buildInitialFormData(params, { quoteAsset, templateConfig }),
   }
 }
 

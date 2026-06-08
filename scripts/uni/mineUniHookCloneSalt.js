@@ -1,10 +1,10 @@
 import { getCreate2Address, keccak256, solidityPacked, toBeHex, zeroPadValue } from 'ethers'
-import { isUniTokenModuleTag } from './moduleTags.js'
+import { isUniTokenModuleTag } from '../tags/moduleTags.js'
 
 export const HOOK_ADDR_MASK = (1n << 14n) - 1n
 // Must match PancakeInfinityHookBitmap.UNITOKEN_HOOK_BITMAP offsets (0, 2, 3, 7).
 export const HOOK_ADDR_TARGET = (1n << 0n) | (1n << 2n) | (1n << 3n) | (1n << 7n)
-const MAX_SALT = 500_000n
+const MAX_SALT = 500_000_000n
 const LOG_PREFIX = '[uniHookSalt]'
 const PROGRESS_EVERY = 100_000n
 
@@ -37,7 +37,7 @@ export async function ensureHookSaltAvailable(
     return { salt: hookSalt, hookAddress, remined: false }
   }
   console.warn(
-    `${LOG_PREFIX} slot occupied before submit (${hookAddress}), re-mining…`,
+    `${LOG_PREFIX} slot occupied before submit (${hookAddress}), re-mining...`,
   )
   const mined = await mineUniHookCloneSalt(provider, createDeployer, hookImplementation)
   return { salt: mined.salt, hookAddress: mined.hookAddress, remined: true }
@@ -74,7 +74,7 @@ export async function mineUniHookCloneSalt(
   for (let salt = 0n; salt < maxSalt; salt++) {
     if (salt > 0n && salt % PROGRESS_EVERY === 0n) {
       console.log(
-        `${LOG_PREFIX} searching… salt index=${salt.toString()}, skippedOccupied=${skippedOccupied.toString()}`,
+        `${LOG_PREFIX} searching... salt index=${salt.toString()}, skippedOccupied=${skippedOccupied.toString()}`,
       )
     }
 

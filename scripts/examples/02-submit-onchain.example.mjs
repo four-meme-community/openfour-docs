@@ -9,7 +9,7 @@ import { JsonRpcProvider, Wallet } from 'ethers'
 import {
   prepareCreateTokenOnChain,
   submitCreateTokenOnChain,
-} from '../createTokenOnChain.js'
+} from '../create/createOnChain.js'
 
 const RPC_URL = 'https://bsc-testnet.publicnode.com'
 const PRIVATE_KEY = process.env.PRIVATE_KEY // never commit real keys

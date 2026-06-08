@@ -1,7 +1,7 @@
 import { Contract, JsonRpcProvider, ZeroAddress } from 'ethers'
-import ITagDescriptorAbi from './abi/ITagDescriptor.json' with { type: 'json' }
-import OpenFourRegistryAbi from './abi/OpenFourRegistry.json' with { type: 'json' }
-import OpenFourToolsAbi from './abi/OpenFourTools.json' with { type: 'json' }
+import ITagDescriptorAbi from '../abi/ITagDescriptor.json' with { type: 'json' }
+import OpenFourRegistryAbi from '../abi/OpenFourRegistry.json' with { type: 'json' }
+import OpenFourToolsAbi from '../abi/OpenFourTools.json' with { type: 'json' }
 
 export function mapParamDescriptor(p) {
   return {
@@ -67,7 +67,7 @@ export async function resolveToolsAddress({ registryAddress, provider }) {
 }
 
 /**
- * registryAddress + presetId → { schemas, toolsAddress }
+ * registryAddress + presetId -> { schemas, toolsAddress }
  */
 export async function loadPresetSchemas({ registryAddress, presetId, provider }) {
   const toolsAddress = await resolveToolsAddress({ registryAddress, provider })

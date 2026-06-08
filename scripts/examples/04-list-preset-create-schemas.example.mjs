@@ -9,7 +9,7 @@ import {
   CREATE_MODE,
   resolveAllPresetCreateSchemas,
   resolvePresetCreateSchema,
-} from '../resolvePresetCreateSchemas.js'
+} from '../schema/resolvePresetCreateSchemas.js'
 
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS
 const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'

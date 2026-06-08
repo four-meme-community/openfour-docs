@@ -12,7 +12,7 @@
  *   ENCODED_TAGS=0x... node scripts/examples/05-parse-encoded-tags.example.mjs
  */
 import { id } from 'ethers'
-import { parseCreationEncodedTags } from '../encodedTags.js'
+import { parseCreationEncodedTags } from '../tags/encodedTags.js'
 
 const ENCODED_TAGS =
   process.env.ENCODED_TAGS || '0x01' + '0000000000000000'.repeat(7)
