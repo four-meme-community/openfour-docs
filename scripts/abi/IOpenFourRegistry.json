@@ -1,0 +1,557 @@
+[
+  {
+    "inputs": [],
+    "name": "createDeployer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModule",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "beacon",
+            "type": "address"
+          },
+          {
+            "internalType": "enum IOpenFourRegistry.ModuleKind",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "moduleId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "string",
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "internalType": "address",
+                "name": "author",
+                "type": "address"
+              },
+              {
+                "internalType": "uint16",
+                "name": "feeShareBps",
+                "type": "uint16"
+              }
+            ],
+            "internalType": "struct OpenFourTypes.ModuleMetadata",
+            "name": "metadata",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IOpenFourRegistry.ModuleRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModuleBeacon",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModuleImplementation",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPreset",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "createEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vaultModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "curveModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tradeModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "migrateModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenImplId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "customDataId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.Preset",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPresetIds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPresetIdsByBatch",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPresetIdsCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPresetTokenImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getTokenImpl",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "implementation",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct IOpenFourRegistry.TokenImplRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isPresetActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isPresetCreateEnabled",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "openFourCore",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "openFourTool",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "resolvePresetImplementations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "createEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vaultModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "curveModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tradeModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "migrateModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenImplId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "customDataId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.Preset",
+        "name": "preset",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vaultModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "curveModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tradeModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "migrateModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customDataModule",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      }
+    ],
+    "name": "tagOf",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "taxVaultRegistry",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "uniTokenV4HookImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

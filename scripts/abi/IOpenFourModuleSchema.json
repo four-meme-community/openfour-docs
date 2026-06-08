@@ -1,0 +1,79 @@
+[
+  {
+    "inputs": [],
+    "name": "moduleEncodeSchema",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  }
+]

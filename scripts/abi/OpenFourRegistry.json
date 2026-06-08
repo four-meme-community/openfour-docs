@@ -1,0 +1,2033 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "BasicAccessControlDenied",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrBadFeeShare",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrEmptyModuleKey",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrEmptyTokenImplId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrModuleInactive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrModuleMissing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrPresetInactive",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "existingTag",
+        "type": "string"
+      }
+    ],
+    "name": "RegistryErrTagCollision",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrTokenImplIdMissing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrTokenImplMissing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrUnknownPreset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrVersionMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrWrongModuleKind",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrZeroAuthor",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrZeroModuleImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrZeroTaxVaultRegistry",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RegistryErrZeroTokenImplementation",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldCreateDeployer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newCreateDeployer",
+        "type": "address"
+      }
+    ],
+    "name": "CreateDeployerUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum IOpenFourRegistry.ModuleKind",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "ModuleUpserted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldCore",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newCore",
+        "type": "address"
+      }
+    ],
+    "name": "OpenFourCoreUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldTool",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newTool",
+        "type": "address"
+      }
+    ],
+    "name": "OpenFourToolUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "PresetActiveUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      }
+    ],
+    "name": "PresetAuthorUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "createEnabled",
+        "type": "bool"
+      }
+    ],
+    "name": "PresetCreateEnabledUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "PresetTokenImplIdUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "tokenImpl",
+        "type": "address"
+      }
+    ],
+    "name": "PresetTokenImplUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "createEnabled",
+        "type": "bool"
+      }
+    ],
+    "name": "PresetUpserted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      }
+    ],
+    "name": "PresetValidatorUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      }
+    ],
+    "name": "TagRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldRegistry",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newRegistry",
+        "type": "address"
+      }
+    ],
+    "name": "TaxVaultRegistryUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "name": "TokenImplUpserted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldImpl",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newImpl",
+        "type": "address"
+      }
+    ],
+    "name": "UniTokenV4HookImplUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ROLE_DEPLOYER",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ROLE_OPERATOR",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "createDeployer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModule",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "beacon",
+            "type": "address"
+          },
+          {
+            "internalType": "enum IOpenFourRegistry.ModuleKind",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes32",
+                "name": "moduleId",
+                "type": "bytes32"
+              },
+              {
+                "internalType": "string",
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "internalType": "address",
+                "name": "author",
+                "type": "address"
+              },
+              {
+                "internalType": "uint16",
+                "name": "feeShareBps",
+                "type": "uint16"
+              }
+            ],
+            "internalType": "struct OpenFourTypes.ModuleMetadata",
+            "name": "metadata",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IOpenFourRegistry.ModuleRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModuleBeacon",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getModuleImplementation",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPreset",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "createEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vaultModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "curveModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tradeModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "migrateModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenImplId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "customDataId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.Preset",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPresetIds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPresetIdsByBatch",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "ids",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPresetIdsCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPresetTokenImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getTokenImpl",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "implementation",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct IOpenFourRegistry.TokenImplRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isPresetActive",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isPresetCreateEnabled",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "modules",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      },
+      {
+        "internalType": "enum IOpenFourRegistry.ModuleKind",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "moduleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "feeShareBps",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.ModuleMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "nameOfRole",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "openFourCore",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "openFourTool",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "presets",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "createEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "tokenModuleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "vaultModuleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "curveModuleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "tradeModuleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "migrateModuleId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "customDataId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "resolvePresetImplementations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "createEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vaultModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "curveModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tradeModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "migrateModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenImplId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "customDataId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.Preset",
+        "name": "preset",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vaultModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "curveModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tradeModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "migrateModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customDataModule",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "deployer",
+        "type": "address"
+      }
+    ],
+    "name": "setCreateDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "core",
+        "type": "address"
+      }
+    ],
+    "name": "setOpenFourCore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "tool",
+        "type": "address"
+      }
+    ],
+    "name": "setOpenFourTool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "setPresetActive",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      }
+    ],
+    "name": "setPresetAuthor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
+      }
+    ],
+    "name": "setPresetCreateEnabled",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenImpl",
+        "type": "address"
+      }
+    ],
+    "name": "setPresetTokenImpl",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setPresetTokenImplId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      }
+    ],
+    "name": "setPresetValidator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "adminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setRoleAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "registry",
+        "type": "address"
+      }
+    ],
+    "name": "setTaxVaultRegistry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "setUniTokenV4HookImpl",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes8",
+        "name": "",
+        "type": "bytes8"
+      }
+    ],
+    "name": "tagOf",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "taxVaultRegistry",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "tokenImpls",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "uniTokenV4HookImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "moduleKey",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      },
+      {
+        "internalType": "enum IOpenFourRegistry.ModuleKind",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "moduleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "feeShareBps",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.ModuleMetadata",
+        "name": "metadata",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "upsertModule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "createEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "address",
+            "name": "validator",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "vaultModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "curveModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tradeModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "migrateModuleId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenImplId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "customDataId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "author",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.Preset",
+        "name": "preset",
+        "type": "tuple"
+      }
+    ],
+    "name": "upsertPreset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "tokenImplId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "name": "upsertTokenImpl",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

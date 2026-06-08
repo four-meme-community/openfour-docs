@@ -1,0 +1,319 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "burn",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "Currency",
+            "name": "currency0",
+            "type": "address"
+          },
+          {
+            "internalType": "Currency",
+            "name": "currency1",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "hooks",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "poolManager",
+            "type": "address"
+          },
+          {
+            "internalType": "uint24",
+            "name": "fee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "parameters",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PoolKey",
+        "name": "key",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint160",
+        "name": "sqrtPriceX96",
+        "type": "uint160"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [
+      {
+        "internalType": "int24",
+        "name": "tick",
+        "type": "int24"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mint",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "Currency",
+            "name": "currency0",
+            "type": "address"
+          },
+          {
+            "internalType": "Currency",
+            "name": "currency1",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "hooks",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "poolManager",
+            "type": "address"
+          },
+          {
+            "internalType": "uint24",
+            "name": "fee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "parameters",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PoolKey",
+        "name": "key",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "int24",
+            "name": "tickLower",
+            "type": "int24"
+          },
+          {
+            "internalType": "int24",
+            "name": "tickUpper",
+            "type": "int24"
+          },
+          {
+            "internalType": "int256",
+            "name": "liquidityDelta",
+            "type": "int256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "salt",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ModifyLiquidityParams",
+        "name": "params",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "hookData",
+        "type": "bytes"
+      }
+    ],
+    "name": "modifyLiquidity",
+    "outputs": [
+      {
+        "internalType": "BalanceDelta",
+        "name": "callerDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "BalanceDelta",
+        "name": "feesAccrued",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "settle",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "Currency",
+            "name": "currency0",
+            "type": "address"
+          },
+          {
+            "internalType": "Currency",
+            "name": "currency1",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "hooks",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "poolManager",
+            "type": "address"
+          },
+          {
+            "internalType": "uint24",
+            "name": "fee",
+            "type": "uint24"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "parameters",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PoolKey",
+        "name": "key",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "zeroForOne",
+            "type": "bool"
+          },
+          {
+            "internalType": "int256",
+            "name": "amountSpecified",
+            "type": "int256"
+          },
+          {
+            "internalType": "uint160",
+            "name": "sqrtPriceLimitX96",
+            "type": "uint160"
+          }
+        ],
+        "internalType": "struct SwapParams",
+        "name": "params",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "hookData",
+        "type": "bytes"
+      }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "BalanceDelta",
+        "name": "",
+        "type": "int256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Currency",
+        "name": "currency",
+        "type": "address"
+      }
+    ],
+    "name": "sync",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Currency",
+        "name": "currency",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "take",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

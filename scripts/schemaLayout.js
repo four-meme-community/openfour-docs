@@ -1,0 +1,170 @@
+import { ZeroAddress } from 'ethers'
+import { defaultFormDataFromSchema } from './encodeFromSchema.js'
+import { AUTO_MINED_PARAM_NAMES, VAULT_PARAM_NAMES } from './resolvePresetCreateSchemas.js'
+
+export const OUTER_CREATE_DEFAULTS = {
+  createFee: '0',
+  presaleQuote: '0',
+}
+
+export const DEFAULT_BSC_TESTNET_PANCAKE_V2_ROUTER =
+  '0xD99D1c33F9fC3444f8101754aBC46c52416550D1'
+
+export const MODULE_PARAM_GROUPS = ['base', 'token', 'vault', 'curve', 'trade', 'migrate', 'customData']
+
+export function isVaultManagedParam(paramName) {
+  return VAULT_PARAM_NAMES.has(paramName)
+}
+
+export function isAutoManagedParam(paramName) {
+  return AUTO_MINED_PARAM_NAMES.has(paramName)
+}
+
+export function isDisplayParam(desc) {
+  return !isVaultManagedParam(desc.name) && !isAutoManagedParam(desc.name)
+}
+
+export function getDisplayParams(activeParams) {
+  return activeParams.filter(isDisplayParam)
+}
+
+export function inferInputType(desc) {
+  if (desc.abiType === 'bool') return 'checkbox'
+  if (desc.abiType === 'uint8' || desc.abiType === 'uint16') return 'number'
+  return 'text'
+}
+
+export function buildFieldModel(desc) {
+  const inputType = inferInputType(desc)
+  const model = {
+    name: desc.name,
+    label: desc.title || desc.name,
+    abiType: desc.abiType,
+    inputType,
+    required: !desc.optional,
+    optional: desc.optional,
+    decimals: Number(desc.decimals ?? 0),
+    placeholder: desc.defaultValue || '',
+    hint: desc.hint || '',
+    defaultValue: desc.defaultValue || '',
+    min: desc.minValue || '',
+    max: desc.maxValue || '',
+    hidden: !isDisplayParam(desc),
+    managedBy: managedBy(desc.name),
+  }
+
+  if (inputType === 'number') {
+    model.minNumber = desc.minValue !== '' ? Number(desc.minValue) : undefined
+    model.maxNumber = desc.maxValue !== '' ? Number(desc.maxValue) : undefined
+  }
+
+  return model
+}
+
+export function buildFieldModels(params, { includeHidden = false } = {}) {
+  const models = params.map(buildFieldModel)
+  return includeHidden ? models : models.filter((field) => !field.hidden)
+}
+
+export function buildModuleParamGroups(baseSchema, schemas) {
+  return {
+    base: baseSchema ?? [],
+    token: schemas?.token?.params ?? [],
+    vault: schemas?.vault?.params ?? [],
+    curve: schemas?.curve?.params ?? [],
+    trade: schemas?.trade?.params ?? [],
+    migrate: schemas?.migrate?.params ?? [],
+    customData: schemas?.customData?.params ?? [],
+  }
+}
+
+export function buildLayoutSections(baseSchema, schemas, { includeHidden = false } = {}) {
+  const groups = buildModuleParamGroups(baseSchema, schemas)
+  return MODULE_PARAM_GROUPS
+    .map((group) => ({
+      group,
+      params: groups[group],
+      fields: buildFieldModels(groups[group], { includeHidden }),
+    }))
+    .filter((section) => section.params.length > 0 || section.fields.length > 0)
+}
+
+export function buildInitialFormData(params, {
+  quoteAsset,
+  router = DEFAULT_BSC_TESTNET_PANCAKE_V2_ROUTER,
+  includeOuterCreateDefaults = true,
+  saleAmountRatioWhenFullSupply = 0.8,
+} = {}) {
+  const defaults = defaultFormDataFromSchema(params)
+
+  if (
+    defaults.saleAmount &&
+    defaults.maxSupply &&
+    defaults.saleAmount === defaults.maxSupply &&
+    saleAmountRatioWhenFullSupply > 0 &&
+    saleAmountRatioWhenFullSupply < 1
+  ) {
+    const maxSupply = Number(defaults.maxSupply)
+    if (Number.isFinite(maxSupply)) {
+      defaults.saleAmount = String(Math.floor(maxSupply * saleAmountRatioWhenFullSupply))
+    }
+  }
+
+  const form = {
+    ...(includeOuterCreateDefaults ? OUTER_CREATE_DEFAULTS : {}),
+    ...defaults,
+  }
+
+  if (quoteAsset) form.quoteAsset = quoteAsset
+  if (params.some((p) => p.name === 'router')) form.router = router
+  if (params.some((p) => p.name === 'taxTreasury')) form.taxTreasury = ''
+
+  return form
+}
+
+export function enrichFormWithManagedParams(form, {
+  isTaxToken = false,
+  vaultSelection,
+  hookSalt,
+} = {}) {
+  return {
+    ...form,
+    ...(isTaxToken
+      ? {
+          taxVaultTypeId: vaultSelection?.typeId,
+          taxVaultInitParams: vaultSelection?.initParamsHex ?? '0x',
+        }
+      : {}),
+    ...(hookSalt ? { hookSalt } : {}),
+  }
+}
+
+export function buildCreateFormPlan({
+  baseSchema,
+  schemas,
+  activeParams,
+  quoteAsset = ZeroAddress,
+  includeHidden = false,
+} = {}) {
+  const params = activeParams ?? [
+    ...(baseSchema ?? []),
+    ...(schemas?.token?.params ?? []),
+    ...(schemas?.curve?.params ?? []),
+    ...(schemas?.trade?.params ?? []),
+    ...(schemas?.migrate?.params ?? []),
+  ]
+
+  return {
+    params,
+    displayParams: getDisplayParams(params),
+    fields: buildFieldModels(params, { includeHidden }),
+    sections: buildLayoutSections(baseSchema ?? [], schemas ?? {}, { includeHidden }),
+    defaults: buildInitialFormData(params, { quoteAsset }),
+  }
+}
+
+function managedBy(paramName) {
+  if (isVaultManagedParam(paramName)) return 'vaultSelector'
+  if (isAutoManagedParam(paramName)) return 'autoGenerated'
+  return null
+}

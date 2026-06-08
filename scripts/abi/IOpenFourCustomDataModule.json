@@ -1,0 +1,168 @@
+[
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "requestedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "executedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBuy",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "blockNumber",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "traderQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "proof",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.TradeHookContext",
+        "name": "ctx",
+        "type": "tuple"
+      }
+    ],
+    "name": "afterHook",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "descriptor",
+    "outputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "fourCore",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "params",
+        "type": "bytes"
+      },
+      {
+        "internalType": "string",
+        "name": "moduleVersion",
+        "type": "string"
+      }
+    ],
+    "name": "init",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "vault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRaised",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remainingForSale",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.MigrateHookContext",
+        "name": "ctx",
+        "type": "tuple"
+      }
+    ],
+    "name": "onMigrate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -1,0 +1,368 @@
+[
+  {
+    "inputs": [],
+    "name": "descriptor",
+    "outputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBuy",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remainingForSale",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRaised",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "proof",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.CurveContext",
+        "name": "ctx",
+        "type": "tuple"
+      }
+    ],
+    "name": "evaluate",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "executable",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "quoteAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "adjustedAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "reason",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.CurveResult",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "isBuy",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quoteBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingForSale",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalRaised",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ],
+    "name": "evaluateReverse",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "curveQuote",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getInitParams",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getInitialPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingForSale",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalRaised",
+        "type": "uint256"
+      }
+    ],
+    "name": "getLastPrice",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "remainingForSale",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalRaised",
+        "type": "uint256"
+      }
+    ],
+    "name": "getLiquiditySnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "available",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "initialQuoteLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "initialTokenLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentQuoteLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentTokenLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remainingForSale",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRaised",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.CurveLiquiditySnapshot",
+        "name": "snapshot",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "fourCore",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "requestId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "raiseAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenUri",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes",
+            "name": "tokenParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenSalt",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.TokenCreateParams",
+        "name": "tokenParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "params",
+        "type": "bytes"
+      },
+      {
+        "internalType": "string",
+        "name": "moduleVersion",
+        "type": "string"
+      }
+    ],
+    "name": "init",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

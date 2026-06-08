@@ -1,0 +1,254 @@
+[
+  {
+    "inputs": [],
+    "name": "CoreErrBadConfig",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrBadPhase",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrBadTax",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrBadToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrBudgetNotExecutable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrCurveRejected",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrDuplicateToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrInsufficientNative",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrNativeOnlyWrapped",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrNativeRefundFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrPresetCreateDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrPresetInactive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrPresetTokenImplNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrPresetValidatorNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrQuoteMustBeERC20",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrRequestAlreadyUsed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrRequestExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrSlippage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrTokenNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrTokenPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrTradeMax",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrTradeMin",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrTradeRejected",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrZeroFeeRouter",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrZeroRegistry",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrZeroToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CoreErrZeroWrappedNative",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DeployErrFounderCannotReceiveNative",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DeployErrFounderProbeUnderfunded",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "inner",
+        "type": "bytes"
+      }
+    ],
+    "name": "LikwidMigrateErrAddLiquidityFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrAlreadyInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrExistingPoolLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "inner",
+        "type": "bytes"
+      }
+    ],
+    "name": "LikwidMigrateErrFeeDistributeFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrIdenticalCurrency",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrNoTokenLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrNotInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrOnlyFourCore",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrParamsNotEmpty",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrUnsupportedChain",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrWrongToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroFeeRouter",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroFourCore",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroPairPosition",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroQuote",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroQuoteLiquidity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroVault",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LikwidMigrateErrZeroVaultBalance",
+    "type": "error"
+  }
+]

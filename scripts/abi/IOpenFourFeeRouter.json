@@ -1,0 +1,472 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "DeveloperFeeClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "kind",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "pending",
+        "type": "bool"
+      }
+    ],
+    "name": "FeeAssigned",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "curveQuote",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "bps",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.FeeTier[]",
+        "name": "tradeFees",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "antiSniperEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "createBlock",
+        "type": "uint256"
+      }
+    ],
+    "name": "buildDistribution",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "pending",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IOpenFourFeeRouter.FeeRecipient[]",
+        "name": "recipients",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "netQuote",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "protocolFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "taxFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "developerFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "antiSniperFee",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "claimDevFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "quoteAssets",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "claimDevFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "author",
+        "type": "address"
+      }
+    ],
+    "name": "devFeePending",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "evalTotalFee",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "kind",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "pending",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IOpenFourFeeRouter.FeeRecipient[]",
+        "name": "recipients",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "distributeFeesFromBalance",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "feeConfig",
+    "outputs": [
+      {
+        "internalType": "uint16",
+        "name": "protocolFeeBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "developerFeePoolBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxProtocolDevFeeBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint16",
+        "name": "maxTaxBps",
+        "type": "uint16"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxTaxTiers",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder2",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder3",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder4",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder5",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "placeholder6",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "curveQuote",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "bps",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.FeeTier[]",
+        "name": "tradeFees",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "antiSniperEnabled",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "createBlock",
+        "type": "uint256"
+      }
+    ],
+    "name": "previewDistribution",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "netQuote",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "antiSniperFee",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "curveQuote",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "bps",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.FeeTier[]",
+        "name": "tradeFees",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "previewDistribution",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "netQuote",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasury",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

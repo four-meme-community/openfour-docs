@@ -1,0 +1,25 @@
+[
+  {
+    "inputs": [],
+    "name": "descriptor",
+    "outputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

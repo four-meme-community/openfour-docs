@@ -1,0 +1,27 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taxQuote",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isBuy",
+        "type": "bool"
+      }
+    ],
+    "name": "onBondingTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "onMigrate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

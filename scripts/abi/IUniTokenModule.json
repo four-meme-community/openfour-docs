@@ -1,0 +1,216 @@
+[
+  {
+    "inputs": [],
+    "name": "activeRenderer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "curveModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tradeModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "migrateModule",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "customDataModule",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "requestId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "raiseAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenUri",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes",
+            "name": "tokenParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenSalt",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.TokenCreateParams",
+        "name": "tokenParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "string",
+        "name": "tokenImplVersion",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "tokenModuleVersion",
+        "type": "string"
+      }
+    ],
+    "name": "createToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "maxSupply",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "symbol",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deployedHook",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "descriptor",
+    "outputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getInitParams",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "poolManager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "positionManager",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

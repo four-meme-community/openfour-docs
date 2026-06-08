@@ -1,0 +1,504 @@
+[
+  {
+    "inputs": [],
+    "name": "antiSniperQuoteAccrued",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "burnToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "descriptor",
+    "outputs": [
+      {
+        "internalType": "bytes8",
+        "name": "tagId",
+        "type": "bytes8"
+      },
+      {
+        "internalType": "string",
+        "name": "tag",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "version",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "fourCore",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getInitParams",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "fourCore",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "migrateModule",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "requestId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "raiseAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenUri",
+            "type": "string"
+          },
+          {
+            "internalType": "bytes",
+            "name": "tokenParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenSalt",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.TokenCreateParams",
+        "name": "tokenParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "vaultParams",
+        "type": "bytes"
+      },
+      {
+        "internalType": "string",
+        "name": "moduleVersion",
+        "type": "string"
+      }
+    ],
+    "name": "init",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialSaleAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isSoldOut",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "protocolFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "taxFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "devFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "antiSniperQuote",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.VaultTradeParams",
+        "name": "p",
+        "type": "tuple"
+      }
+    ],
+    "name": "onBuy",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newTotalRaised",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newRemainingForSale",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "trader",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "protocolFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "taxFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "devFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "antiSniperQuote",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.VaultTradeParams",
+        "name": "p",
+        "type": "tuple"
+      }
+    ],
+    "name": "onSell",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "newTotalRaised",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newRemainingForSale",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "phase",
+    "outputs": [
+      {
+        "internalType": "enum OpenFourTypes.Phase",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "quoteAsset",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "remainingForSale",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum OpenFourTypes.Phase",
+        "name": "newPhase",
+        "type": "uint8"
+      }
+    ],
+    "name": "setPhase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum OpenFourTypes.Phase",
+        "name": "newPhase",
+        "type": "uint8"
+      }
+    ],
+    "name": "setTokenPhase",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "soldAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "token",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRaised",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferQuote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferQuoteForMigration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferTokenForMigration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "wrappedNative",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

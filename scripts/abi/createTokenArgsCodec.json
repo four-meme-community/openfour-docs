@@ -1,0 +1,25 @@
+{
+  "initParams13": [
+    { "name": "name", "type": "string" },
+    { "name": "symbol", "type": "string" },
+    { "name": "tokenUri", "type": "string" },
+    { "name": "maxSupply", "type": "uint256" },
+    { "name": "saleAmount", "type": "uint256" },
+    { "name": "raiseAmount", "type": "uint256" },
+    { "name": "quoteAsset", "type": "address" },
+    { "name": "tokenSalt", "type": "bytes32" },
+    { "name": "tokenParams", "type": "bytes" },
+    { "name": "vaultParams", "type": "bytes" },
+    { "name": "curveParams", "type": "bytes" },
+    { "name": "tradeParams", "type": "bytes" },
+    { "name": "migrateParams", "type": "bytes" }
+  ],
+  "outerFields": [
+    { "name": "requestId", "type": "uint256" },
+    { "name": "presetId", "type": "uint256" },
+    { "name": "validTimestamp", "type": "uint256" },
+    { "name": "createFee", "type": "uint256" },
+    { "name": "presaleQuote", "type": "uint256" },
+    { "name": "antiSniperEnabled", "type": "bool" }
+  ]
+}

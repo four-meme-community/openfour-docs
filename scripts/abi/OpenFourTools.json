@@ -1,0 +1,1507 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "BasicAccessControlDenied",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "previousAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "beacon",
+        "type": "address"
+      }
+    ],
+    "name": "BeaconUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldCore",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newCore",
+        "type": "address"
+      }
+    ],
+    "name": "CoreUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ROLE_DEPLOYER",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ROLE_OPERATOR",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "core",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "encodePresetTags",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "encodedTags",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "options",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
+      }
+    ],
+    "name": "estimateBuy",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userPays",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userReceives",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "executionPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TradeEstimate",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxQuotePayAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "options",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
+      }
+    ],
+    "name": "estimateBuyByBudget",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userPays",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userReceives",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "executionPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TradeEstimate",
+        "name": "estimate",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "trader",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "options",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "proof",
+        "type": "bytes"
+      }
+    ],
+    "name": "estimateSell",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "curveQuote",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userPays",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "userReceives",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "executionPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TradeEstimate",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "caller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "validTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "createFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "presaleQuote",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "antiSniperEnabled",
+        "type": "bool"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenUri",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "saleAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "raiseAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteAsset",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tokenSalt",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "tokenParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "vaultParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "curveParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "tradeParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "migrateParams",
+            "type": "bytes"
+          },
+          {
+            "internalType": "bytes",
+            "name": "customDataParams",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.TokenInitParams",
+        "name": "initParams",
+        "type": "tuple"
+      }
+    ],
+    "name": "getCreateTokenSigningPayload",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getCurveLiquiditySnapshot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bool",
+            "name": "available",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "initialQuoteLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "initialTokenLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentQuoteLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentTokenLiquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "remainingForSale",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalRaised",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastPrice",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OpenFourTypes.CurveLiquiditySnapshot",
+        "name": "snapshot",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPresetEncodeSchemas",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "tokenSchema",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "vaultSchema",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "curveSchema",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "tradeSchema",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "migrateSchema",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "kind",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "abiType",
+                "type": "string"
+              },
+              {
+                "internalType": "uint8",
+                "name": "decimals",
+                "type": "uint8"
+              },
+              {
+                "internalType": "bool",
+                "name": "optional",
+                "type": "bool"
+              },
+              {
+                "internalType": "string",
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "defaultValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "minValue",
+                "type": "string"
+              },
+              {
+                "internalType": "string",
+                "name": "maxValue",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ParamDescriptor[]",
+            "name": "params",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ModuleEncodeSchema",
+        "name": "customDataSchema",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTokenBaseSchema",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "abiType",
+            "type": "string"
+          },
+          {
+            "internalType": "uint8",
+            "name": "decimals",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "optional",
+            "type": "bool"
+          },
+          {
+            "internalType": "string",
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "defaultValue",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "hint",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "minValue",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "maxValue",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct ParamDescriptor[]",
+        "name": "p",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "core_",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "nameOfRole",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxiableUUID",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeOperator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newCore",
+        "type": "address"
+      }
+    ],
+    "name": "setCore",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "adminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setRoleAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      }
+    ],
+    "name": "upgradeTo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newImplementation",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "upgradeToAndCall",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]
