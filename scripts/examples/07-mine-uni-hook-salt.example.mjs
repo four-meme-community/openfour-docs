@@ -17,7 +17,7 @@ import OpenFourRegistryAbi from '../abi/OpenFourRegistry.json' with { type: 'jso
 import { mineUniHookCloneSalt } from '../uni/mineUniHookCloneSalt.js'
 
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS
-const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'
+const RPC_URL = process.env.RPC_URL || 'https://bsc-rpc.publicnode.com'
 const MAX_SALT = process.env.MAX_SALT ? BigInt(process.env.MAX_SALT) : undefined
 
 async function resolveRegistryAddresses(provider) {

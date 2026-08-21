@@ -12,7 +12,7 @@ import {
 } from '../schema/resolvePresetCreateSchemas.js'
 
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS
-const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'
+const RPC_URL = process.env.RPC_URL || 'https://bsc-rpc.publicnode.com'
 const PRESET_ID = process.env.PRESET_ID // optional: resolve single preset
 
 async function main() {

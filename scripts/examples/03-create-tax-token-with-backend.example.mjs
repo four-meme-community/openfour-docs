@@ -17,7 +17,7 @@ import { createTaxTokenWithBackendAndChain } from '../create/createTaxTokenFlow.
 import { defaultFormDataFromSchema, encodeModuleParams } from '../schema/encodeFromSchema.js'
 import { loadPresetSchemas } from '../schema/loadPresetSchemas.js'
 
-const RPC_URL = process.env.RPC_URL ?? 'https://bsc-testnet.publicnode.com'
+const RPC_URL = process.env.RPC_URL ?? 'https://bsc-rpc.publicnode.com'
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS ?? '0xYourRegistry'
 const OPEN_FOUR_CORE = process.env.OPEN_FOUR_CORE ?? '0xYourOpenFourCore'

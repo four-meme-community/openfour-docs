@@ -11,7 +11,7 @@ import {
   submitCreateTokenOnChain,
 } from '../create/createOnChain.js'
 
-const RPC_URL = 'https://bsc-testnet.publicnode.com'
+const RPC_URL = 'https://bsc-rpc.publicnode.com'
 const PRIVATE_KEY = process.env.PRIVATE_KEY // never commit real keys
 const OPEN_FOUR_CORE = '0xYourOpenFourCore'
 const WRAPPED_NATIVE = process.env.WRAPPED_NATIVE // WBNB / WETH on this chain

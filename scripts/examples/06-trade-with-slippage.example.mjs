@@ -28,7 +28,7 @@ import {
   submitTradeTx,
 } from '../trade/tradeFlow.js'
 
-const RPC_URL = process.env.RPC_URL || 'https://bsc-testnet.publicnode.com'
+const RPC_URL = process.env.RPC_URL || 'https://bsc-rpc.publicnode.com'
 const REGISTRY_ADDRESS = process.env.REGISTRY_ADDRESS
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS
 const PRIVATE_KEY = process.env.PRIVATE_KEY
