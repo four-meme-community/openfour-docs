@@ -20,8 +20,8 @@ This directory contains OpenFour documentation for third-party integration, modu
 ## Documents
 
 - [Integration Guide 0.0.4](./docs/integration-guide.md): for wallets, trading UIs, indexers, data backends, launch platforms, and aggregators integrating creation, estimation, trading, event listening, token recognition, module recognition, error handling, and event interpretation.
-- [TaxToken Tax and Distribution Mechanism](./mechanisms/tax-token.md): explains bonding and migrated tax collection, four-way distribution, manual holder-reward funding, keeper workflows, and gas behavior.
-- [Lista V2 Stake-Tax Mechanism](./mechanisms/lista-v2-stake.md): explains StrategyTaxToken identification, Lista V2 pool routing, tax dispatch, Lista vault share distribution, and keeper integration.
+- [TaxToken Tax and Distribution Mechanism](./docs/mechanisms/tax-token.md): explains bonding and migrated tax collection, four-way distribution, manual holder-reward funding, keeper workflows, and gas behavior.
+- [Lista V2 Stake-Tax Mechanism](./docs/mechanisms/lista-v2-stake.md): explains StrategyTaxToken identification, Lista V2 pool routing, tax dispatch, Lista vault share distribution, and keeper integration.
 - [Developer Guide 0.0.2](./docs/developer-guide.md): for developers building custom OpenFour modules, Presets, validators, or token extensions. It covers architecture principles, module relationships, interface requirements, schemas, validators, and the official website submission flow.
 - [FairLaunch Sample](./docs/sample.md): explains the FairLaunch demo contract structure, module responsibilities, and sample gameplay flow under `contracts/`.
 

@@ -116,7 +116,7 @@ Both implementations use `migratedPools` to identify post-migration buys and sel
 - `token.tax`: distribution buckets and accounting are implemented directly by `TaxToken`.
 - `token.strategy_tax`: conversion and distribution are delegated to `taxStrategy()`. Call `strategyTag()` to identify the attached strategy.
 
-`strategyTag()` is not part of `TokenCreated.encodedTags`. For a Lista V2 stake-tax token, it returns `tax_strategy.lista_v2_stake`. See [Lista V2 Stake-Tax Mechanism](../mechanisms/lista-v2-stake.md).
+`strategyTag()` is not part of `TokenCreated.encodedTags`. For a Lista V2 stake-tax token, it returns `tax_strategy.lista_v2_stake`. See [Lista V2 Stake-Tax Mechanism](./mechanisms/lista-v2-stake.md).
 
 ## 4. Querying Token Runtime Configuration
 
@@ -1261,7 +1261,7 @@ Token-level tax lifecycle:
 - `TaxToken` implements founder, holder, burn, and liquidity accounting directly. `StrategyTaxToken` forwards tax to `taxStrategy()` and synchronizes eligible holder balances with that strategy.
 - `dispatchTax()` is permissionless. `DispatchReady` is only a keeper hint; check `canDispatchTax()` immediately before submitting.
 
-For dispatch order, manual holder-reward funding, keeper batching, and gas behavior, see [TaxToken Tax and Distribution Mechanism](../mechanisms/tax-token.md).
+For dispatch order, manual holder-reward funding, keeper batching, and gas behavior, see [TaxToken Tax and Distribution Mechanism](./mechanisms/tax-token.md).
 
 Do not reuse parameter units between the two implementations:
 

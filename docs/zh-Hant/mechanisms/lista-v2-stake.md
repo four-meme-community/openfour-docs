@@ -1,6 +1,6 @@
 # Lista V2 質押稅費機制
 
-[English](../../../mechanisms/lista-v2-stake.md) | [繁體中文](./lista-v2-stake.md)
+[English](../../mechanisms/lista-v2-stake.md) | [繁體中文](./lista-v2-stake.md)
 
 本文說明第三方前端、索引器、keeper 和資料分析後端應如何識別並接入 OpenFour Lista V2 質押稅費機制，重點包括 token 稅費生命週期、Lista V2 launch pair、Lista vault 質押，以及安全選擇交易路由所需的判斷訊號。
 

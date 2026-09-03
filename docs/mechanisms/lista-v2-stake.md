@@ -1,6 +1,6 @@
 # Lista V2 Stake-Tax Mechanism
 
-[English](./lista-v2-stake.md) | [繁體中文](../docs/zh-Hant/mechanisms/lista-v2-stake.md)
+[English](./lista-v2-stake.md) | [繁體中文](../zh-Hant/mechanisms/lista-v2-stake.md)
 
 This document explains how third-party frontends, indexers, keepers, and analytics backends should identify and integrate the OpenFour Lista V2 stake-tax mechanism. It focuses on the token tax lifecycle, Lista V2 launch pair, Lista vault staking, and the signals required to select a safe trading route.
 

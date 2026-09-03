@@ -1,6 +1,6 @@
 # TaxToken 稅費與分配機制
 
-[English](../../../mechanisms/tax-token.md) | [繁體中文](./tax-token.md)
+[English](../../mechanisms/tax-token.md) | [繁體中文](./tax-token.md)
 
 本文說明 OpenFour `TaxToken` 如何收取、轉換及分配稅費，並介紹 holder reward 手動注資、keeper 入口和 gas 行為。
 
