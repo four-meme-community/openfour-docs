@@ -65,6 +65,9 @@ interface IOpenFourCore {
     );
 
     event PhaseTransition(address indexed token, OpenFourTypes.Phase from, OpenFourTypes.Phase to, address operator);
+    event RegistryUpdated(address indexed oldRegistry, address indexed newRegistry);
+    event FeeRouterUpdated(address indexed oldFeeRouter, address indexed newFeeRouter);
+    event ZapRouterUpdated(address indexed oldRouter, address indexed newRouter);
     event TokenPaused(address indexed token, bool paused);
 
     function createToken(bytes memory createArgs, bytes memory signature) external payable returns (address token);
@@ -72,6 +75,7 @@ interface IOpenFourCore {
     function buyByBudget(address token, uint256 maxQuotePayAmount, uint256 minAmountOut, uint256 options, bytes calldata proof) external payable;
     function sell(address token, uint256 amount, uint256 minQuoteReceive, uint256 options, bytes calldata proof) external;
     function wrappedNative() external view returns (address);
+    function zapRouter() external view returns (address);
     function feeRouter() external view returns (IOpenFourFeeRouter);
     function registry() external view returns (IOpenFourRegistry);
     function tokens(address token_)

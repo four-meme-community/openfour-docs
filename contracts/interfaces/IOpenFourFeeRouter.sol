@@ -11,6 +11,20 @@ interface IOpenFourFeeRouter {
         bool pending;
     }
 
+    struct FeeConfig {
+        uint16 protocolFeeBps;
+        uint16 developerFeePoolBps;
+        uint16 maxProtocolDevFeeBps;
+        uint16 maxTaxBps;
+        uint8 maxTaxTiers;
+        uint256 placeholder1;
+        uint256 placeholder2;
+        uint256 placeholder3;
+        uint256 placeholder4;
+        uint256 placeholder5;
+        uint256 placeholder6;
+    }
+
     struct OverriddenFeeConfig {
         uint16 protocolFeeBps;
         uint16 developerFeePoolBps;
@@ -22,6 +36,7 @@ interface IOpenFourFeeRouter {
 
     event FeeAssigned(address indexed token, address indexed quoteAsset, address recipient, uint8 indexed kind, uint256 amount, bool pending);
     event DeveloperFeeClaimed(address indexed quoteAsset, address indexed author, uint256 amount, address indexed to);
+    event RebateUpdated(address indexed oldRebate, address indexed newRebate);
     event PresetFeeConfigUpdated(
         uint256 indexed presetId,
         bool active,
@@ -64,4 +79,18 @@ interface IOpenFourFeeRouter {
     function claimDevFee(address quoteAsset, address to) external;
     function claimDevFees(address[] calldata quoteAssets, address to) external;
     function treasury() external view returns (address);
+    function rebate() external view returns (address);
+    function feeConfig() external view returns (
+        uint16 protocolFeeBps,
+        uint16 developerFeePoolBps,
+        uint16 maxProtocolDevFeeBps,
+        uint16 maxTaxBps,
+        uint8 maxTaxTiers,
+        uint256 placeholder1,
+        uint256 placeholder2,
+        uint256 placeholder3,
+        uint256 placeholder4,
+        uint256 placeholder5,
+        uint256 placeholder6
+    );
 }

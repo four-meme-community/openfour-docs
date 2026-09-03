@@ -7,8 +7,11 @@ import {OpenFourToken} from "./OpenFourToken.sol";
 import {OpenFourTypes} from "../libraries/OpenFourTypes.sol";
 import {ITaxTokenBonding} from "../interfaces/ITaxTokenBonding.sol";
 import {IWrappedNative} from "../interfaces/IWrappedNative.sol";
+import {ITaxVault} from "../taxvault/ITaxVault.sol";
 
 interface ITokenHelper {
+    /// @notice Returns the configured native payout gas limit for a token.
+    function getGasLimit(address token) external view returns (uint256);
     /// @notice Adds token-funded liquidity for the calling token.
     function addLiquidity(uint256 amountToken) external;
     /// @notice Adds quote-funded liquidity for the calling token.
@@ -23,7 +26,7 @@ interface ITokenHelper {
 
 interface IShareHolderManager {
     /// @notice Returns whether an account is excluded from holder rewards.
-    function isBlacklisted(address account) external view returns (bool);
+    function isBlacklisted(address token, address account) external view returns (bool);
 }
 
 /// @title TaxToken
@@ -91,7 +94,14 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
     address public shareHolderManager;
 
     /// @dev Reentrancy guard for helper-triggered token transfers during swaps and liquidity adds.
+    ///      Also read by `_transfer()` to skip tax/dispatch logic for those trusted internal moves,
+    ///      so it must never be set around calls to externally-controlled addresses (e.g. `founder`).
     bool private swapping;
+
+    /// @dev Reentrancy guard scoped to `_dispatchFee()` only. Unlike `swapping`, `_transfer()` never
+    ///      reads this flag, so a founder contract that reenters via a transfer during its callback
+    ///      still pays tax normally -- it just cannot trigger a nested fee dispatch.
+    bool private dispatchingFee;
 
     /// @notice Buy fee rate in basis points for post-migration pool buys.
     uint256 public buyFeeRate;
@@ -148,6 +158,11 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
     uint256 public feeToLiquidity;
     /// @notice Founder quote reserved until native transfer succeeds.
     uint256 public feeToFounder;
+    /// @notice Cumulative quote manually funded for holder rewards.
+    uint256 public totalManualRewards;
+
+    /// @notice Whether the token supports manually funding holder rewards.
+    bool public constant supportsManualRewards = true;
 
     event FeeDispatched(
         uint256 amountFounder,
@@ -158,6 +173,13 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
     event FeeClaimed(address account, uint256 amount);
     event FeeInsufficient(address account, uint256 claimable, uint256 balance);
     event FeeDispatchDeferred(uint8 indexed kind, uint256 amount, bytes reason);
+    /// @notice Signals that accumulated work has crossed a dispatch threshold.
+    /// @param reason 0 for token tax, 1 for quote tax.
+    /// @param pendingAmount Accumulated amount in the corresponding asset's native units.
+    /// @dev This is a keeper hint only; callers must confirm with `canDispatchTax()` before sending a transaction.
+    event DispatchReady(uint8 indexed reason, uint256 pendingAmount);
+    /// @notice Emitted after quote is manually funded and credited entirely to holder rewards.
+    event ManualHolderRewardsFunded(address indexed sender, uint256 amount);
 
     /// @notice Initializes tax parameters and inherited token runtime fields.
     function initialize(OpenFourToken.InitArgs calldata c) external override initializer {
@@ -214,6 +236,46 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         _flushDeferredBurnLp();
     }
 
+    /// @notice Returns whether a keeper dispatch would attempt meaningful work.
+    /// @dev A true result indicates eligible work, but does not guarantee downstream swaps or payouts succeed.
+    function canDispatchTax() external view returns (bool) {
+        if (swapping || dispatchingFee) {
+            return false;
+        }
+        if (feeToFounder > 0) {
+            return true;
+        }
+
+        bool migrated = tokenPhase == OpenFourTypes.Phase.Migrated;
+        if (
+            migrated && tokenHelper != address(0)
+                && (tokenAccumulated > minDispatch || feeToBurn > 0 || feeToLiquidity > 0)
+        ) {
+            return true;
+        }
+
+        bool dispatchPhase = tokenPhase == OpenFourTypes.Phase.Trading
+            || tokenPhase == OpenFourTypes.Phase.MigratePending || migrated;
+        if (!dispatchPhase || feeAccumulated == 0 || feeAccumulated < minDispatchQuote) {
+            return false;
+        }
+
+        bool deferBurnLp = !migrated;
+        return (rateFounder > 0 && founder != address(0))
+            || (rateHolder > 0 && totalShares > 0 && quote != address(0)) || rateBurn > 0
+            || (rateLiquidity > 0 && (deferBurnLp || tokenHelper != address(0)));
+    }
+
+    /// @notice Lets a keeper or any other caller dispatch pending tax before the next user transfer.
+    /// @dev Existing minimum thresholds and configured fee destinations remain enforced.
+    ///      A nested call during an active swap or payout is ignored.
+    function dispatchTax() external {
+        if (swapping) {
+            return;
+        }
+        _dispatchFee();
+    }
+
     function _decodeOrDefault(bytes calldata raw, address creator) internal pure returns (TaxTokenParams memory p) {
         if (raw.length == 0) {
             p = TaxTokenParams({
@@ -244,7 +306,7 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
             shareHolderManager != address(0) &&
             from != address(0) &&
             to != address(0) &&
-            IShareHolderManager(shareHolderManager).isBlacklisted(from)
+            IShareHolderManager(shareHolderManager).isBlacklisted(address(this), from)
         ) {
             revert("TaxToken: blacklisted sender");
         }
@@ -264,7 +326,14 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
                 if (fee > 0) {
                     amount -= fee;
                     super._transfer(from, address(this), fee);
+                    uint256 previous = tokenAccumulated;
                     tokenAccumulated += fee;
+                    if (
+                        tokenHelper != address(0) && previous <= minDispatch
+                            && tokenAccumulated > minDispatch
+                    ) {
+                        emit DispatchReady(0, tokenAccumulated);
+                    }
                 }
             }
         }
@@ -293,19 +362,39 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
                 _claimFee(from);
             }
         }
+        // Hook: notify vault of share changes
+        if (taxVaultTypeId != bytes32(0) && founder.code.length > 0) {
+            try ITaxVault(founder).updateShares(from, to, userInfo[from].share, userInfo[to].share) {} catch {}
+        }
     }
 
     function _creditBondingTax(uint256 taxQuote) internal {
         if (taxQuote == 0) {
             return;
         }
+        uint256 previous = feeAccumulated;
         feeAccumulated += taxQuote;
         totalTaxCollected += taxQuote;
+        if (previous < minDispatchQuote && feeAccumulated >= minDispatchQuote) {
+            emit DispatchReady(1, feeAccumulated);
+        }
     }
 
     /// @dev Merge DEX `tokenAccumulated` when migrated, then split `feeAccumulated` (quote) by rates.
     /// @param ignoreMinThreshold When true, skip `minDispatchQuote` check (reserved; not used by `onMigrate`).
     function _dispatchFee(bool ignoreMinThreshold) internal {
+        if (dispatchingFee) {
+            return;
+        }
+        dispatchingFee = true;
+        _doDispatchFee(ignoreMinThreshold);
+        dispatchingFee = false;
+    }
+
+    /// @dev Actual dispatch logic, entered only once per top-level `_dispatchFee()` call. A reentrant
+    ///      transfer or `dispatchTax()` call triggered by an external hook (e.g. `founder`) during this
+    ///      execution is blocked by the `dispatchingFee` guard in `_dispatchFee()` above.
+    function _doDispatchFee(bool ignoreMinThreshold) internal {
         if (tokenPhase == OpenFourTypes.Phase.Migrated && tokenHelper != address(0)) {
             _flushDeferredBurnLp();
         }
@@ -434,12 +523,18 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         _dispatchFee(false);
     }
 
+    /// @dev `founder` is externally controlled; the `dispatchingFee` guard on `_dispatchFee()` already
+    ///      blocks a nested dispatch if this hook reenters, so no additional flag is set here.
     function _transferFounderFee(uint256 amountQuote) internal returns (bool) {
         if (quote == wrappedNative && wrappedNative != address(0)) {
             IWrappedNative(wrappedNative).withdraw(amountQuote);
             return _sendFounderNative(amountQuote);
         } else {
             IERC20(quote).safeTransfer(founder, amountQuote);
+            // Only contract founder can be notified
+            if (taxVaultTypeId != bytes32(0) && founder.code.length > 0) {
+                try ITaxVault(founder).onERC20TaxReceived(quote, amountQuote) {} catch {}
+            }
         }
         return true;
     }
@@ -449,9 +544,10 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
             return true;
         }
 
-        swapping = true;
-        (bool ok,) = payable(founder).call{value: amountQuote}("");
-        swapping = false;
+        (bool ok,) = payable(founder).call{
+            value: amountQuote,
+            gas: ITokenHelper(tokenHelper).getGasLimit(address(this))
+        }("");
         if (!ok) {
             emit FeeDispatchDeferred(5, amountQuote, bytes("TaxToken: founder native transfer failed"));
             return false;
@@ -583,6 +679,40 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         }
     }
 
+    /// @notice Funds holder rewards with native currency or the configured ERC20 quote.
+    /// @dev Send native currency with `amountQuote == 0`, or approve quote and pass a positive amount
+    ///      with `msg.value == 0`. Native funding is only available when quote is wrapped native.
+    function manualFundHolderRewards(uint256 amountQuote) external payable {
+        require(!swapping && !dispatchingFee, "TaxToken: manual funding while busy");
+        require(rateHolder > 0, "TaxToken: holder rewards disabled");
+        require(totalShares > 0, "TaxToken: no eligible holders");
+
+        uint256 received;
+        swapping = true;
+        if (msg.value > 0) {
+            require(amountQuote == 0, "TaxToken: ambiguous funding");
+            require(
+                wrappedNative != address(0) && quote == wrappedNative,
+                "TaxToken: native quote unsupported"
+            );
+            IWrappedNative(wrappedNative).deposit{value: msg.value}();
+            received = msg.value;
+        } else {
+            require(amountQuote > 0, "TaxToken: zero amount");
+            uint256 balanceBefore = IERC20(quote).balanceOf(address(this));
+            IERC20(quote).safeTransferFrom(msg.sender, address(this), amountQuote);
+            received = IERC20(quote).balanceOf(address(this)) - balanceBefore;
+        }
+        swapping = false;
+
+        require(received > 0, "TaxToken: zero received");
+        feeHolder += received;
+        feePerShare += (received * MAGNITUDE) / totalShares;
+        totalManualRewards += received;
+
+        emit ManualHolderRewardsFunded(msg.sender, received);
+    }
+
     /// @notice Returns the number of accounts ever added to holder tracking.
     function userCount() external view returns (uint256) {
         return _users.length;
@@ -612,7 +742,7 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         if (quote == address(0)) {
             return;
         }
-        if (shareHolderManager != address(0) && IShareHolderManager(shareHolderManager).isBlacklisted(account)) {
+        if (shareHolderManager != address(0) && IShareHolderManager(shareHolderManager).isBlacklisted(address(this), account)) {
             return;
         }
         uint256 amountQuote = claimableFee(account);
@@ -720,6 +850,8 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         _addLiquidityWithQuote(amountQuote);
     }
 
+    /// @dev Accepts wrapped-native `withdraw()` callbacks and other native transfers without accounting.
+    ///      External holder-reward funding must use `manualFundHolderRewards`.
     receive() external payable {}
 
     function _descriptorTag() internal pure override returns (string memory) {

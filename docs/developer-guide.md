@@ -768,3 +768,211 @@ When launching a custom Preset, it is recommended to provide:
 - Security audit status.
 
 Third-party integrators rely on this information for UI, indexing, trade routing, and risk warnings.
+
+## 25. Developing an Unverified Royalty TaxVault Template
+
+OpenFour Royalty mode lets a creator use an unverified TaxVault implementation through the platform `ForwardVault` wrapper. The reference wrapper is deployed at [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code). This path does not mean the submitted template has been reviewed, audited, registered, or endorsed by OpenFour.
+
+### 25.1 Runtime Structure and Royalty Split
+
+The creation flow ABI-encodes:
+
+```solidity
+ForwardVault.InitParams({
+    template: unverifiedTemplateImplementation,
+    initData: abi.encode(MyTemplate.Params({ /* ... */ }))
+})
+```
+
+`ForwardVault` clones `template` with EIP-1167 `Clones.clone()`, then initializes the clone with the OpenFour token, quote asset, token creator as owner, an empty `roles` array, and `initData`.
+
+For each tax receipt:
+
+- Up to approximately `6%` is the royalty share (`ROYALTY_BPS = 600`) paid to the cloned template's `authorWallet()`. Solidity integer division rounds this amount down.
+- The remainder, approximately `94%`, is forwarded to the cloned template. For amounts below 17 smallest asset units, the rounded royalty is zero.
+- If `authorWallet()` returns `address(0)`, `address(0xdEaD)`, or the `ForwardVault` itself, the author waives the royalty and the full amount is forwarded to the clone.
+- For native tax, the royalty portion is wrapped and paid to the author as wrapped native; the clone receives native currency.
+- For ERC20 tax, both portions remain in the quote ERC20. The wrapper ignores the nominal callback amount and splits its entire current balance, so pre-transferred or donated balances are included. After transferring the nominal clone portion, `ForwardVault` calls `onERC20TaxReceived()` on a best-effort basis; a fee-on-transfer clone may receive less than that callback amount.
+
+The first receipt locks the wrapper to `Native` or `ERC20` revenue mode. A later receipt of the other mode makes the `ForwardVault` call revert with `RevenueAssetMismatch`. This is not always a full-system rollback: on the ERC20 path, `TaxToken` transfers the asset before calling the callback and catches a callback revert, so funds may remain in the wrapper. The native path records failed delivery for later retry in `TaxToken`.
+
+The current reference wrapper resolves wrapped native only for BSC mainnet (`chainId 56`) and BSC testnet (`chainId 97`). Initialization on another chain reverts with `UnsupportedChain`.
+
+### 25.2 Required Template Interface
+
+The submitted address must be a deployed, clone-compatible implementation. It must expose:
+
+```solidity
+interface IForwardVaultTemplate {
+    function initialize(
+        address token,
+        address quote,
+        address owner,
+        address[] calldata roles,
+        bytes calldata initParams
+    ) external;
+
+    function taxVaultToken() external view returns (address);
+    function taxVaultQuote() external view returns (address);
+    function authorWallet() external view returns (address);
+    function onERC20TaxReceived(address asset, uint256 amount) external;
+}
+```
+
+After initialization, `taxVaultToken()` and `taxVaultQuote()` must exactly match the values supplied by `ForwardVault`; otherwise creation reverts with `InvalidClonedVault`. `authorWallet()` must return ABI-valid address data and should remain stable for predictable royalty accounting.
+
+The quote address must be a non-zero contract. The template address must also be a deployed contract; an EOA or an address without code is rejected.
+
+The implementation should inherit `BaseTaxVault` or reproduce its initialization and caller checks. Because the wrapper supplies an empty `roles` array, an unverified template must not require registry-provided roles during initialization.
+
+`ForwardVault` does not forward `updateShares()` to the cloned template. Calls from `TaxToken` reach the outer vault's no-op implementation, so templates that depend on holder-share synchronization, dividends, or holder accounting are not compatible with the current wrapper. Use this Royalty path only for receipt-based templates unless a future wrapper explicitly adds that forwarding hook.
+
+### 25.3 Clone-Safe Implementation Pattern
+
+An implementation used as `template` should:
+
+- Disable initialization on the implementation constructor and put all per-clone state setup in `_customInit()`.
+- Define a unique `TYPE_ID`; changing storage layout or initialization ABI should use a new type/version.
+- Validate every decoded address, bps value, array bound, and cross-field invariant on-chain.
+- Accept native transfers if the quote can be wrapped native.
+- Use `SafeERC20` and actual balance deltas when supporting fee-on-transfer assets.
+- Restrict withdrawals and configuration writes explicitly; ownership alone does not make arbitrary external calls safe.
+- Avoid relying on constructor-written mutable storage, proxy-only behavior, or a non-empty `roles` array.
+
+Minimal pattern:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {BaseTaxVault} from "../contracts/taxvault/BaseTaxVault.sol";
+import {
+    ModuleEncodeSchema,
+    ParamDescriptor
+} from "../contracts/libraries/OpenFourTypes.sol";
+
+contract MyRoyaltyVault is BaseTaxVault {
+    struct Params {
+        address recipient;
+        uint16 recipientBps;
+    }
+
+    bytes32 public constant TYPE_ID =
+        keccak256("MyProject.MyRoyaltyVault.v1");
+
+    address public recipient;
+    uint16 public recipientBps;
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function authorWallet() public pure override returns (address) {
+        return 0x1234567890123456789012345678901234567890;
+    }
+
+    function _customInit(
+        address[] calldata,
+        bytes calldata initParams
+    ) internal override {
+        _setTypeId(TYPE_ID);
+        Params memory p = abi.decode(initParams, (Params));
+        require(p.recipient != address(0), "zero recipient");
+        require(p.recipientBps <= 10_000, "invalid bps");
+        recipient = p.recipient;
+        recipientBps = p.recipientBps;
+    }
+
+    function onERC20TaxReceived(
+        address asset,
+        uint256 amount
+    ) public override {
+        super.onERC20TaxReceived(asset, amount);
+        // Apply template-specific accounting or distribution.
+    }
+
+    function moduleEncodeSchema()
+        external
+        pure
+        override
+        returns (ModuleEncodeSchema memory)
+    {
+        ParamDescriptor[] memory p = new ParamDescriptor[](2);
+        p[0] = ParamDescriptor({
+            name: "recipient",
+            abiType: "address",
+            decimals: 0,
+            optional: false,
+            title: "Recipient",
+            defaultValue: "",
+            hint: "Template payout recipient",
+            minValue: "",
+            maxValue: ""
+        });
+        p[1] = ParamDescriptor({
+            name: "recipientBps",
+            abiType: "uint16",
+            decimals: 0,
+            optional: false,
+            title: "Recipient Share (bps)",
+            defaultValue: "10000",
+            hint: "Share out of 10000",
+            minValue: "0",
+            maxValue: "10000"
+        });
+        return ModuleEncodeSchema("taxvault", 1, p);
+    }
+}
+```
+
+The address returned by `authorWallet()` is the template developer's royalty recipient, not the token creator and not necessarily the vault owner.
+
+### 25.4 Schema Is Required
+
+The complete example above implements `moduleEncodeSchema()` for its inner `initData`. Field order and ABI types must exactly match the template's `Params` struct.
+
+`ForwardVault` itself does not call the inner schema during clone initialization; its on-chain runtime only decodes the fixed outer `(template, initData)` tuple. The inner schema is nevertheless required when inheriting the abstract `BaseTaxVault`, and template authors must publish it for the Royalty frontend to query directly from the submitted implementation and encode `initData`.
+
+The frontend first encodes the template fields as one tuple:
+
+```typescript
+const initData = AbiCoder.defaultAbiCoder().encode(
+  ["(address,uint16)"],
+  [[recipient, recipientBps]],
+);
+```
+
+It then encodes the fixed outer `ForwardVault` schema:
+
+```text
+kind: SafuSkill.ForwardVault
+version: 1
+fields:
+  template address
+  initData bytes
+```
+
+```typescript
+const forwardVaultParams = AbiCoder.defaultAbiCoder().encode(
+  ["(address,bytes)"],
+  [[templateAddress, initData]],
+);
+```
+
+Do not flatten the inner and outer fields into one ABI tuple. `initData` belongs to the cloned template, while `(template, initData)` belongs to `ForwardVault`.
+
+### 25.5 Submission and Security Checklist
+
+Before entering the unverified template address:
+
+- Verify the deployed bytecode belongs to the intended direct implementation.
+- Verify `initialize()` cannot be called twice on a clone.
+- Simulate initialization and confirm the token/quote getters match.
+- Confirm `authorWallet()` returns the intended immutable or governance-controlled address.
+- Test both native and ERC20 receipt paths supported by the selected quote.
+- Test fee-on-transfer behavior using received balance rather than the nominal callback amount.
+- Test callback reverts, failed native sends, reentrancy, withdrawal authorization, and zero/dust amounts.
+- Verify the schema-generated `initData` decodes to exactly the expected `Params`.
+- Publish source, compiler settings, tests, and an audit when available.
+
+The template and initialization parameters cannot be replaced after the `ForwardVault` clone is created. A defect can permanently lock or misroute tax revenue, so this mode should only be used when the creator independently understands and trusts the submitted contract.

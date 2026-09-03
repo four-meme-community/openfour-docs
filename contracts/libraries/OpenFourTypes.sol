@@ -21,6 +21,8 @@ struct ModuleEncodeSchema {
 
 library OpenFourTypes {
     uint8 internal constant CREATION_TAGS_SCHEMA_V1 = 1;
+    uint256 internal constant TRADE_OPTION_RECEIVE_WRAPPED_NATIVE = 1 << 0;
+    uint256 internal constant TRADE_OPTION_ZAP_NATIVE = 1 << 1;
 
     enum Phase {
         Created,

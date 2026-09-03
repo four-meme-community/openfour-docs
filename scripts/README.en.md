@@ -9,7 +9,7 @@ JavaScript helpers for third-party OpenFour integrations: wallets, trading UIs, 
 - **Contract ABIs**: bundled Core / Tools / Registry / interface / token ABIs
 - **Uni V4 hookSalt**: pre-mine CREATE2 `hookSalt` for Uni token presets with valid Pancake Infinity hook flags
 
-For full protocol details, see [`integration-guide.md`](../integration-guide.md).
+For full protocol details, see [`integration-guide.md`](../docs/integration-guide.md).
 
 ## Use cases
 
@@ -353,4 +353,4 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 
 - Before trading, read `core.tokens(token)` to confirm the token exists, is not paused, and the phase still allows internal-market trades
 - If an estimate returns `tokenAmount == 0`, do not let users submit the trade
-- For error codes, events, and phase rules, see [`integration-guide.md`](../integration-guide.md)
+- For error codes, events, and phase rules, see [`integration-guide.md`](../docs/integration-guide.md)

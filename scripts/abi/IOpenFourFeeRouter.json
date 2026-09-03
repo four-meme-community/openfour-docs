@@ -74,6 +74,55 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "protocolFeeBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "developerFeePoolBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "maxProtocolDevFeeBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "maxTaxBps",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "maxTaxTiers",
+        "type": "uint8"
+      }
+    ],
+    "name": "PresetFeeConfigUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -363,6 +412,11 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "presetId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "curveQuote",
         "type": "uint256"
       },
@@ -416,44 +470,66 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "rebate",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "curveQuote",
+        "name": "presetId",
         "type": "uint256"
       },
       {
         "components": [
           {
-            "internalType": "address",
-            "name": "recipient",
-            "type": "address"
+            "internalType": "uint16",
+            "name": "protocolFeeBps",
+            "type": "uint16"
           },
           {
             "internalType": "uint16",
-            "name": "bps",
+            "name": "developerFeePoolBps",
             "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "maxProtocolDevFeeBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "maxTaxBps",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint8",
+            "name": "maxTaxTiers",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
           }
         ],
-        "internalType": "struct OpenFourTypes.FeeTier[]",
-        "name": "tradeFees",
-        "type": "tuple[]"
+        "internalType": "struct IOpenFourFeeRouter.OverriddenFeeConfig",
+        "name": "cfg",
+        "type": "tuple"
       }
     ],
-    "name": "previewDistribution",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "totalFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "netQuote",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "setPresetFeeConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

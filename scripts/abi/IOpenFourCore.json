@@ -655,6 +655,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldRouter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newRouter",
+        "type": "address"
+      }
+    ],
+    "name": "ZapRouterUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -668,7 +687,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "maxQuoteAmount",
+        "name": "maxPayAmount",
         "type": "uint256"
       },
       {
@@ -696,7 +715,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "maxQuotePayAmount",
+        "name": "maxPayAmount",
         "type": "uint256"
       },
       {
@@ -784,7 +803,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "minQuoteReceive",
+        "name": "minReceiveAmount",
         "type": "uint256"
       },
       {
@@ -920,6 +939,19 @@
   {
     "inputs": [],
     "name": "wrappedNative",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "zapRouter",
     "outputs": [
       {
         "internalType": "address",

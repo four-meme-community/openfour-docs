@@ -8,12 +8,13 @@
 
 ## 1. 接入對象
 
-OpenFour 的核心寫入口是 `OpenFourCore`。第三方接入通常圍繞四類合約：
+OpenFour 的核心寫入口是 `OpenFourCore`。第三方接入通常圍繞五類合約：
 
 - `OpenFourCore`：建立代幣、買入、按預算買入、賣出、遷移、讀取 token 執行期配置。
 - `OpenFourTools`：交易預估、流動性快照、建立表單 schema。
 - `OpenFourRegistry`：Preset、模組、tag 字典查詢。
 - `OpenFourFeeRouter`：費用配置、費用事件、開發者費查詢和領取。
+- `ZapRouter`：透過已配置路由在 V2/V3 相容 DEX 上提供公開報價與 swap，並支援 fee-on-transfer token 路徑。
 
 每個 OpenFour 代幣本身是一個 ERC20，同時綁定一組模組實例：
 
@@ -77,6 +78,7 @@ function descriptor() external view returns (bytes8 tagId, string memory tag, st
 
 - `token.standard`：標準 ERC20。
 - `token.tax`：帶轉帳稅、分紅或稅金分配邏輯。
+- `token.strategy_tax`：將稅費兌換、質押和分配委託給每個 token 專屬策略的 token。
 - `token.creator_rewards`：創作者獎勵類 token。
 - `token.uni`：餘額綁定鏈上藝術/收藏品類 token。
 
@@ -101,10 +103,20 @@ IOpenFourToken(token).customData(); // 可能為 address(0)
 
 - `OpenFourToken.sol`
 - `TaxToken.sol`
+- `StrategyTaxToken.sol`
 - `CreatorRewardsToken.sol`
 - `UniToken.sol`
 
 對於通用接入，runtime config 和 `IOpenFourToken` 標準 getter 通常已經足夠。如果索引器、資料後端或進階 UI 需要解析 token 特有資料，例如稅費 token 狀態、creator rewards 狀態、migrated pool 規則、UniToken renderer/art 資料，或 token 特有事件，可以結合這些源碼和 `scripts/abi/` 中隨包提供的 token ABI 進行解析。
+
+### 3.5 區分 TaxToken 和 StrategyTaxToken
+
+兩種 implementation 都使用 `migratedPools` 識別遷移後的買入和賣出，但分配模型不同：
+
+- `token.tax`：分配 bucket 和 accounting 直接由 `TaxToken` 實作。
+- `token.strategy_tax`：兌換和分配委託給 `taxStrategy()`；呼叫 `strategyTag()` 識別所綁定的策略。
+
+`strategyTag()` 不包含在 `TokenCreated.encodedTags` 中。Lista V2 質押稅費 token 會返回 `tax_strategy.lista_v2_stake`。詳見 [Lista V2 質押稅費機制](./mechanisms/lista-v2-stake.md)。
 
 ## 4. 查詢 token 執行期配置
 
@@ -582,6 +594,159 @@ await core.sell(token, amount, minReceive, 0, "0x");
 - 預估結果 `tokenAmount > 0`
 - 滑點上限/下限已設定
 
+### 7.5 ZapRouter 與 Fee-on-Transfer Token
+
+`ZapRouter` 標準介面執行 owner 已配置的路由。每條已配置路由最多三個 hop，每個 hop 透過 `dexId` 選擇 `V2` 或 `V3` 類型的 `DexType`。`address(0)` 會被正規化為 wrapped native，`setRoute()` 會自動儲存反向路由。`ViaBridge` 和 taxed-token 介面則會把已配置 bridge 路由與 caller 指定的首個或最後一個 DEX hop 組合；接入方必須明確校驗並選擇該動態 hop。
+
+#### 遷移後的多跳 DEX 交易
+
+OpenFour token 進入 `Migrated` 後，Core 內盤 `buy` 和 `sell` 不再是交易路徑。錢包或聚合器可以直接呼叫 `ZapRouter`，在受支援的 V2/V3 相容 DEX 之間執行路由：
+
+```text
+買入：BNB/WBNB -> 已配置中間 hop -> bridgeToken -> 遷移 DEX pool -> meme token
+賣出：meme token -> 遷移 DEX pool -> bridgeToken -> 已配置中間 hop -> WBNB/BNB
+```
+
+應根據路由註冊方式選擇入口：
+
+- 完整 token-to-token 或 native-to-token 路由已由 owner 配置時，使用 `quoteExactInput` / `swapExactInput`、`quoteNativeToToken` / `swapNativeToToken`，或對應的 token-to-native 介面。
+- 僅配置了可重用 native-to-bridge 路由時，使用 `ViaBridge` 介面。買入時，`finalDexId` 和 `finalFee` 選擇遷移池的最後一個 `bridgeToken -> meme token` hop；賣出時，`firstDexId` 和 `firstFee` 選擇第一個 `meme token -> bridgeToken` hop。
+- 已配置 bridge 部分加上 caller 指定的遷移池 hop，總數不得超過三個 hop。
+- 報價前必須解析並校驗遷移 pool、bridge token、DEX 類型及 V3 fee tier。不要假設所有遷移 token 都使用相同 DEX 或 pool 類型。
+
+以下是透過動態最後一個 hop 買入非稅費遷移 token 的示例：
+
+```typescript
+const [quotedOut] = await zapRouter.quoteNativeToTokenViaBridge.staticCall(
+  bridgeToken,
+  memeToken,
+  finalDexId,
+  finalFee, // V2 會忽略
+  nativeAmountIn,
+);
+const minAmountOut = quotedOut * 99n / 100n;
+
+await zapRouter.swapNativeToTokenViaBridge(
+  bridgeToken,
+  memeToken,
+  finalDexId,
+  finalFee,
+  userAddress,
+  minAmountOut,
+  Math.floor(Date.now() / 1000) + 300,
+  { value: nativeAmountIn },
+);
+```
+
+反向交易時，先對 `ZapRouter` approve `memeToken`，使用 `quoteTokenToNativeViaBridge` 報價，再執行 `swapTokenToNativeViaBridge`。Router 返回的 `midTokens` 可供接入方展示或記錄實際中間路由。
+
+非稅費資產可使用標準 exact-input/exact-output 介面。Exact-output 不支援 taxed token，因為無法保證 recipient 收稅後的實際餘額增量。
+
+遷移後的稅費 token 應使用僅支援 V2 的 exact-input 入口：
+
+- `swapNativeToTaxToken(...)`：native 換 taxed token；呼叫方指定的最後一個 hop 必須是 V2。
+- `swapTaxTokenToNative(...)`：taxed token 換 native；呼叫方指定的第一個 hop 必須是 V2。
+
+這些介面使用 fee-on-transfer 相容的 swap，並透過 balance delta 計算實際輸入/輸出。報價仍只是參考值；接入方必須設定 `minAmountOut`、deadline，並在需要時 approve 名義 token 輸入量。
+
+OpenFour 交易中，`TRADE_OPTION_ZAP_NATIVE = 1 << 1` 的接入語義如下：
+
+- Token quote asset 不是 wrapped native 時，`OpenFourTools` 使用 bit1 返回以 native 計價的 buy/sell 預估。
+- Core `buy` 和 `buyByBudget` 目前透過非零 `msg.value` 和非 wrapped-native quote 選擇 zap 支付路徑；buy 執行時不使用其 `options` 參數。`msg.value` 是 native 上限，而目前 Core 實現使用 `maxPayAmount` 作為 quote-asset 上限。
+- Core `sell` 使用 bit1 將非 wrapped-native quote 收益換成 native；此時 `minQuoteRecvAmount` 表示最小 native/WBNB 輸出。
+- Sell 時可組合 bit1 和 bit0（`TRADE_OPTION_RECEIVE_WRAPPED_NATIVE`），以接收 wrapped native 而非 native。
+
+### 7.6 透過 Core 內建 Zap 使用 BNB 買入 Meme Token
+
+Token 仍處於 OpenFour `Trading` phase，且其 `quoteAsset` 不是 wrapped native 時，`OpenFourCore` 可以原子執行以下路徑：
+
+```text
+使用者 BNB
+  -> OpenFourCore
+  -> Core.zapRouter().swapNativeForExactToken(BNB -> quoteAsset)
+  -> quote fee 發送至 FeeRouter + curve quote 發送至 Vault
+  -> Vault 把 meme token 發送給使用者
+  -> 未使用 BNB 退回使用者
+```
+
+使用者呼叫的是 `OpenFourCore`，不是 `ZapRouter`，也不需要 approve quote asset 或 ZapRouter。啟用此支付方式前先檢查：
+
+```typescript
+const ZAP_NATIVE = 1n << 1n;
+const zapRouter = await core.zapRouter();
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(tokenAddress);
+
+if (zapRouter === ZeroAddress) throw new Error("Core ZapRouter is not configured");
+if (cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()) {
+  // 這是 BNB -> WBNB 直接支付路徑，不需要多資產 zap。
+}
+```
+
+按固定 meme-token 數量買入時，需要同時取得 quote-asset 和 native 兩份預估。Quote 預估提供 Core 使用的 quote 上限，zap 預估提供 BNB 金額：
+
+```typescript
+const quoteEst = await tools.estimateBuy(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  0n,
+  "0x",
+);
+const nativeEst = await tools.estimateBuy(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  ZAP_NATIVE,
+  "0x",
+);
+if (quoteEst.tokenAmount === 0n || nativeEst.tokenAmount === 0n) {
+  throw new Error("buy not executable");
+}
+
+const maxQuotePay = quoteEst.userPays * 101n / 100n;
+const maxNativePay = nativeEst.userPays * 101n / 100n;
+
+await core.buy(
+  tokenAddress,
+  tokenAmount,
+  maxQuotePay, // quote-asset 單位
+  ZAP_NATIVE,  // 語義標記；目前 buy 執行由 msg.value 觸發
+  "0x",
+  { value: maxNativePay }, // BNB wei
+);
+```
+
+Core 透過 ZapRouter 精確取得交易所需 quote，只消耗必要 BNB，並退回 `msg.value` 的剩餘部分。
+
+對「最多花費指定 BNB」的 UX，使用 native budget 進行預估，再把該交易需要的 quote 金額作為 Core quote 上限：
+
+```typescript
+const nativeBudget = parseEther("0.1");
+const est = await tools.estimateBuyByBudget(
+  tokenAddress,
+  userAddress,
+  nativeBudget,
+  ZAP_NATIVE,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("budget not executable");
+
+const maxQuotePay = est.curveQuote + est.totalFee; // quote-asset 單位
+const minTokenOut = est.tokenAmount * 99n / 100n;
+
+await core.buyByBudget(
+  tokenAddress,
+  maxQuotePay,
+  minTokenOut,
+  ZAP_NATIVE,
+  "0x",
+  { value: nativeBudget },
+);
+```
+
+已配置 ZapRouter 必須存在可用的 native-to-quote 路由。提交前應重新預估，並處理 `CoreErrBadConfig`、`CoreErrBudgetNotExecutable`、`CoreErrSlippage` 和 `CoreErrNativeRefundFailed`。
+
 ## 8. 遷移與外盤路由
 
 每次 buy 後，Core 會呼叫 `MigrateModule.evaluate()`。如果返回 `canMigrate = true`，Core 會自動遷移。任何人也可以呼叫：
@@ -621,10 +786,16 @@ event MigrateExecuted(
 解碼規則由 `migrateTagId` 和 `migratedDataVersion` 決定：
 
 - `module.migrate.pcs_v2`：`encodedMigratedData = abi.encode(address pair)`。
+- `module.migrate.bonding_lista_v2`，version `1`：`encodedMigratedData = abi.encode(address pair)`；該 pair 是 Lista V2 的 `token/quoteAsset` launch pair。
 - Likwid V2 類型：通常為 `abi.encode(bytes32 poolId)`。
 - PancakeSwap V4 類型：通常為 `abi.encode(bytes32 poolId)`。
 
+不要把 `token.migratedPools(pool) == true` 單獨視為 pool 已啟用的證明。pool 地址會被預先註冊，用於在內盤階段阻止外部 pool 轉帳。確認 Lista V2 外盤路由已啟用時，應同時滿足：
 
+- `vault.phase() == Migrated`。
+- `MigrateExecuted.migrateTagId` 匹配 `module.migrate.bonding_lista_v2`。
+- `migratedDataVersion == 1`。
+- 解碼出的 pair 與 factory 的 `getPair(token, quoteAsset)` 一致。
 
 ## 10. 事件監聽
 
@@ -637,6 +808,7 @@ event MigrateExecuted(
 - `OpenFourCore.TokenPaused`：token 級暫停。
 - `OpenFourFeeRouter.FeeAssigned`：費用歸屬。
 - `OpenFourFeeRouter.DeveloperFeeClaimed`：開發者費領取。
+- `OpenFourFeeRouter.RebateUpdated`：protocol fee rebate 收款地址變更。
 - `OpenFourToken.MigratedPoolUpdated`：遷移 pool 標記。
 - `OpenFourRegistry.TagRegistered`：本地維護 `tagId -> tag` 字典。
 
@@ -888,6 +1060,7 @@ event FeeAssigned(
 - `quoteAsset`：費用資產，已 indexed。
 - `recipient`：費用歸屬地址；未 indexed，按收款人篩選需要客戶端解碼後過濾。
 - `kind`：費用類型，已 indexed。常見類型包括 protocol、tax、developer、migrate protocol、migrate creator 等，具體枚舉以 FeeRouter 實作為準。
+- `kind == 6`：protocol fee rebate（`FEE_TYPE_REBATE`）。
 - `amount`：費用金額，quote wei。
 - `pending`：`true` 表示記帳為待領取餘額，`false` 表示已即時分發或轉出。
 
@@ -953,7 +1126,7 @@ event TokenTransferred(
 `TokenCreated.encodedTags` 是建立時各模組 `tagId` 的緊湊快照，目前長度為 57 位元組：
 
 ```text
-byte 0      : schema
+byte 0      : schema，目前為 1
 byte 1..8   : token tagId
 byte 9..16  : tokenModule tagId
 byte 17..24 : vault tagId
@@ -976,7 +1149,7 @@ function tagIdFromTag(tag: string) {
 
 function parseEncodedTags(hex: string) {
   if (hex.length !== 2 + 57 * 2) throw new Error("invalid encodedTags length");
-  return {
+  const parsed = {
     schema: dataSlice(hex, 0, 1),
     token: dataSlice(hex, 1, 9),
     tokenModule: dataSlice(hex, 9, 17),
@@ -986,6 +1159,8 @@ function parseEncodedTags(hex: string) {
     migrate: dataSlice(hex, 41, 49),
     customData: dataSlice(hex, 49, 57),
   };
+  if (parsed.schema !== "0x01") throw new Error("unsupported encodedTags schema");
+  return parsed;
 }
 ```
 
@@ -1005,6 +1180,7 @@ Token implementation tags：
 
 - `token.standard`：標準 OpenFour ERC20。
 - `token.tax`：帶轉帳稅和 tax vault 行為的 TaxToken。
+- `token.strategy_tax`：將稅費處理委託給每 token 策略的 StrategyTaxToken。
 - `token.creator_rewards`：創作者獎勵 token。
 - `token.uni`：帶 renderer/art 或 hook 驅動行為的 Uni-style token。
 
@@ -1012,6 +1188,7 @@ Token module tags：
 
 - `module.token.standard`：初始化標準 `OpenFourToken`。
 - `module.token.tax`：初始化 TaxToken 類 token。
+- `module.token.strategy_tax`：初始化 StrategyTaxToken 並 clone 已註冊的 tax strategy。
 - `module.token.creator_rewards`：初始化 creator rewards token。
 - `module.token.uni`：初始化 Uni-style token。
 
@@ -1035,10 +1212,15 @@ Migrate module tags：
 - `module.migrate.pcs_v4`：PancakeSwap V4 遷移。
 - `module.migrate.bonding_pcs_v4`：bonding 遷移到 PancakeSwap V4。
 - `module.migrate.bonding_likwid`：bonding 遷移到 Likwid V2。
+- `module.migrate.bonding_lista_v2`：bonding 遷移到 Lista V2 pair。
 
 Custom data module tags：
 
 - `module.data.standard`：no-op 標準 custom data module。
+
+Tax strategy tag 不編碼在七個 `encodedTags` slot 中。對 `token.strategy_tax` token，應呼叫 `strategyTag()`：
+
+- `tax_strategy.lista_v2_stake`：使用 Lista V2 相容 swap/liquidity，並分配 Lista 質押 share 的策略。
 
 ## 12. Token 識別和模組區分策略
 
@@ -1049,6 +1231,8 @@ Custom data module tags：
 - 判斷完整玩法：解析 `encodedTags` 全部七個 slot。
 - 判斷遷移目標：優先看 migrate slot 的 tag。
 - 判斷稅幣或特殊玩法：不要只看 migrate slot，應組合 token/vault/trade 等多個 slot。
+- 對 `token.strategy_tax` 呼叫 `strategyTag()`，並將返回的 strategy tag 與 token module、migrate tag 組合判斷。
+- 將 `migratedPools(address)` 視為 transfer guard / 稅費分類標記；使用 phase 和 `MigrateExecuted` 判斷實際啟用的外盤 pool。
 - 遇到未知模組：讀 `registry.tagOf(tagId)`，並保留原始 tagId。
 
 ## 13. 費用模型
@@ -1066,6 +1250,21 @@ userPays = curveQuote + protocolFee + taxFee + devFee + antiSniperFee
 ```text
 userReceives = curveQuote - protocolFee - taxFee - devFee
 ```
+
+Token 層稅費生命週期：
+
+- Bonding 階段，FeeRouter 會把 quote 計價稅費直接轉給 `TaxToken` 或 `StrategyTaxToken`；vault 隨後呼叫 `onBondingTrade()`，通知 token 對該筆轉帳記帳，`StrategyTaxToken` 再把 quote 稅費轉入其 strategy。
+- 遷移後，`migratedPools[from] && to != vault` 判斷為買入，`migratedPools[to] && from != vault` 判斷為賣出；進入 `Migrated` phase 前不收 pool transfer tax。
+- 遷移後稅費先以 token 單位累計。`DispatchReady(0, amount)` 表示 token 工作已超過 threshold；`DispatchReady(1, amount)` 表示 quote 工作已達 threshold。
+- `TaxToken` 直接實作 founder、holder、burn、liquidity accounting；`StrategyTaxToken` 將稅費交給 `taxStrategy()`，並向策略同步有效 holder 餘額。
+- `dispatchTax()` 可由任何人呼叫。`DispatchReady` 只是 keeper hint；送出交易前應立即檢查 `canDispatchTax()`。
+
+Dispatch 順序、holder reward 手動注資、keeper 批處理與 gas 行為詳見 [TaxToken 稅費與分配機制](./mechanisms/tax-token.md)。
+
+兩種 implementation 的參數單位不可混用：
+
+- `TaxToken`：`buyFeeRate <= 1000`、`100 <= sellFeeRate <= 1000`，四個 distribution rate 總和為 `100`。
+- `StrategyTaxToken`：兩個 fee rate 均為 `0..1000`、`minShare >= 1 ether`，distribution 單位由所選 strategy 定義；`ListaV2StakeTaxStrategy` 使用總和為 `10_000` 的四個 bps bucket。
 
 anti-sniper：
 
@@ -1118,6 +1317,14 @@ feeRouter.claimDevFees(quoteAssets, to);
 ```
 
 普通交易前端不需要呼叫 claim 介面。
+
+Protocol fee rebate：
+
+- 當 `feeRouter.rebate()` 非零時，protocol fee 的 5% 會立即發送至該地址，其餘 95% 發送至 `treasury`。
+- 當 `rebate() == address(0)` 時，全部 protocol fee 都發送至 `treasury`。
+- Tax、developer 和 migration fee 不參與 rebate 分流。
+- Rebate 分配會發出 `kind == 6`、`pending == false` 的 `FeeAssigned`。
+- Rebate 是 `protocolFee` 的內部分流，不是額外向使用者收費，因此 buy/sell 金額公式不變。
 
 ## 14. 交易接入範例
 

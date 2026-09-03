@@ -9,7 +9,7 @@ OpenFour 第三方接入 JavaScript helper，用於錢包、交易 UI、發射�
 - **Uni V4 hookSalt**：為 Uni token preset 預挖 CREATE2 `hookSalt`，滿足 Pancake Infinity hook flag
 - **合約 ABI**：隨包提供 Core / Tools / Registry / 介面 / token 合約 ABI
 
-更完整的協議說明見 [`integration-guide.md`](../integration-guide.md)。
+更完整的協議說明見 [`integration-guide.md`](../docs/integration-guide.md)。
 
 ## 適用場景
 
@@ -353,4 +353,4 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 
 - 交易前建議先讀 `core.tokens(token)`，確認 token 存在、未暫停，且 phase 仍允許內盤交易
 - 若 `estimate` 返回 `tokenAmount == 0`，不要讓使用者提交交易
-- 詳細錯誤碼、事件與 phase 規則見 [`integration-guide.md`](../integration-guide.md)
+- 詳細錯誤碼、事件與 phase 規則見 [`integration-guide.md`](../docs/integration-guide.md)

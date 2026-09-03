@@ -8,12 +8,13 @@ This guide only covers integration with deployed OpenFour protocols and register
 
 ## 1. Integration Targets
 
-The main write entry point of OpenFour is `OpenFourCore`. Third-party integrations usually work with four categories of contracts:
+The main write entry point of OpenFour is `OpenFourCore`. Third-party integrations usually work with five categories of contracts:
 
 - `OpenFourCore`: token creation, buy, buy by budget, sell, migration, and token runtime configuration reads.
 - `OpenFourTools`: trade estimates, liquidity snapshots, and creation form schemas.
 - `OpenFourRegistry`: Preset, module, and tag dictionary queries.
 - `OpenFourFeeRouter`: fee configuration, fee events, developer fee queries, and claims.
+- `ZapRouter`: public configured-route quotes and swaps across V2- and V3-compatible DEX routers, including fee-on-transfer token routes.
 
 Each OpenFour token is itself an ERC20 and is also bound to a set of module instances:
 
@@ -77,6 +78,7 @@ Common `tag` values:
 
 - `token.standard`: standard ERC20.
 - `token.tax`: token with transfer tax, dividends, or tax distribution logic.
+- `token.strategy_tax`: token that delegates tax conversion, staking, and distribution to a per-token strategy.
 - `token.creator_rewards`: creator rewards token.
 - `token.uni`: token for balance-bound on-chain art or collectibles.
 
@@ -101,10 +103,20 @@ The `contracts/token/` directory includes reference source code for common OpenF
 
 - `OpenFourToken.sol`
 - `TaxToken.sol`
+- `StrategyTaxToken.sol`
 - `CreatorRewardsToken.sol`
 - `UniToken.sol`
 
 For generic integration, the standard runtime config and `IOpenFourToken` getters are usually enough. If an indexer, analytics backend, or advanced UI needs to parse token-specific data, such as tax token state, creator rewards state, migrated pool rules, UniToken renderer/art data, or token-specific events, use these source files together with the bundled token ABIs in `scripts/abi/`.
+
+### 3.5 Distinguishing TaxToken and StrategyTaxToken
+
+Both implementations use `migratedPools` to identify post-migration buys and sells, but their distribution models differ:
+
+- `token.tax`: distribution buckets and accounting are implemented directly by `TaxToken`.
+- `token.strategy_tax`: conversion and distribution are delegated to `taxStrategy()`. Call `strategyTag()` to identify the attached strategy.
+
+`strategyTag()` is not part of `TokenCreated.encodedTags`. For a Lista V2 stake-tax token, it returns `tax_strategy.lista_v2_stake`. See [Lista V2 Stake-Tax Mechanism](../mechanisms/lista-v2-stake.md).
 
 ## 4. Querying Token Runtime Configuration
 
@@ -582,6 +594,159 @@ Recommended checks before trading:
 - Estimate result has `tokenAmount > 0`
 - Slippage upper/lower bounds are set
 
+### 7.5 ZapRouter and Fee-on-Transfer Tokens
+
+Standard `ZapRouter` methods execute owner-configured routes. A configured route contains at most three hops, each selecting a `dexId` whose `DexType` is `V2` or `V3`. `address(0)` is normalized to wrapped native, and `setRoute()` automatically stores the reverse route. `ViaBridge` and taxed-token methods combine a configured bridge route with a caller-selected first or final DEX hop; integrations must validate and select that dynamic hop explicitly.
+
+#### Post-Migration Multi-Hop DEX Trading
+
+After an OpenFour token reaches `Migrated`, Core's internal `buy` and `sell` are no longer the trading route. A wallet or aggregator may call `ZapRouter` directly to route across supported V2/V3-compatible DEXs:
+
+```text
+buy:  BNB/WBNB -> configured intermediate hops -> bridgeToken -> migrated DEX pool -> meme token
+sell: meme token -> migrated DEX pool -> bridgeToken -> configured intermediate hops -> WBNB/BNB
+```
+
+Choose the entry point according to how the route is registered:
+
+- If the complete token-to-token or native-to-token route is owner-configured, use `quoteExactInput` / `swapExactInput`, `quoteNativeToToken` / `swapNativeToToken`, or the corresponding token-to-native methods.
+- If only the reusable native-to-bridge route is configured, use a `ViaBridge` method. For a buy, `finalDexId` and `finalFee` select the migrated pool's final `bridgeToken -> meme token` hop. For a sell, `firstDexId` and `firstFee` select the first `meme token -> bridgeToken` hop.
+- The configured bridge portion plus the caller-selected migrated-pool hop must not exceed three hops in total.
+- Resolve and validate the migrated pool, bridge token, DEX type, and V3 fee tier before quoting. Do not assume that every migrated token uses the same DEX or pool type.
+
+Example for buying a non-taxed migrated token through a dynamic final hop:
+
+```typescript
+const [quotedOut] = await zapRouter.quoteNativeToTokenViaBridge.staticCall(
+  bridgeToken,
+  memeToken,
+  finalDexId,
+  finalFee, // ignored by V2
+  nativeAmountIn,
+);
+const minAmountOut = quotedOut * 99n / 100n;
+
+await zapRouter.swapNativeToTokenViaBridge(
+  bridgeToken,
+  memeToken,
+  finalDexId,
+  finalFee,
+  userAddress,
+  minAmountOut,
+  Math.floor(Date.now() / 1000) + 300,
+  { value: nativeAmountIn },
+);
+```
+
+For the reverse trade, approve `ZapRouter` for `memeToken`, quote with `quoteTokenToNativeViaBridge`, and execute `swapTokenToNativeViaBridge`. The router returns `midTokens`, which integrations can display or record as the actual intermediate route.
+
+Use the standard exact-input/exact-output methods for non-taxed assets. Exact-output execution does not support taxed tokens because the recipient's post-tax balance cannot be guaranteed.
+
+For post-migration tax tokens, use the exact-input V2-only entry points:
+
+- `swapNativeToTaxToken(...)`: native to a taxed token; the caller-selected final hop must be V2.
+- `swapTaxTokenToNative(...)`: taxed token to native; the caller-selected first hop must be V2.
+
+These methods execute fee-on-transfer-compatible swaps and measure actual input/output by balance delta. Quotes remain indicative: integrations must set `minAmountOut`, a deadline, and approve the nominal token input where required.
+
+For OpenFour trades, `TRADE_OPTION_ZAP_NATIVE = 1 << 1` has the following integration semantics:
+
+- `OpenFourTools` uses bit1 to return native-denominated buy/sell estimates when the token's quote asset is not wrapped native.
+- Core `buy` and `buyByBudget` currently select the zap payment path from nonzero `msg.value` with a non-wrapped-native quote; their `options` argument is not used for buy execution. `msg.value` is the native ceiling, while the current Core implementation uses `maxPayAmount` as the quote-asset ceiling.
+- Core `sell` uses bit1 to convert non-wrapped-native quote proceeds to native output; `minQuoteRecvAmount` is then the minimum native/WBNB output.
+- On sell, combine bit1 with bit0 (`TRADE_OPTION_RECEIVE_WRAPPED_NATIVE`) to receive wrapped native instead of native.
+
+### 7.6 Buying a Meme Token with BNB Through Core's Built-in Zap
+
+When the token is still in the OpenFour `Trading` phase and its `quoteAsset` is not wrapped native, `OpenFourCore` can execute this route atomically:
+
+```text
+user BNB
+  -> OpenFourCore
+  -> Core.zapRouter().swapNativeForExactToken(BNB -> quoteAsset)
+  -> quote fees to FeeRouter + curve quote to Vault
+  -> meme token from Vault to user
+  -> unused BNB refunded to user
+```
+
+The user calls `OpenFourCore`, not `ZapRouter`, and does not need to approve either the quote asset or ZapRouter. Before enabling this payment option, verify:
+
+```typescript
+const ZAP_NATIVE = 1n << 1n;
+const zapRouter = await core.zapRouter();
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(tokenAddress);
+
+if (zapRouter === ZeroAddress) throw new Error("Core ZapRouter is not configured");
+if (cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()) {
+  // This is the direct BNB -> WBNB payment path; no multi-asset zap is needed.
+}
+```
+
+For an exact meme-token amount, obtain both quote-asset and native estimates. The quote estimate supplies Core's quote ceiling; the zap estimate supplies the BNB value:
+
+```typescript
+const quoteEst = await tools.estimateBuy(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  0n,
+  "0x",
+);
+const nativeEst = await tools.estimateBuy(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  ZAP_NATIVE,
+  "0x",
+);
+if (quoteEst.tokenAmount === 0n || nativeEst.tokenAmount === 0n) {
+  throw new Error("buy not executable");
+}
+
+const maxQuotePay = quoteEst.userPays * 101n / 100n;
+const maxNativePay = nativeEst.userPays * 101n / 100n;
+
+await core.buy(
+  tokenAddress,
+  tokenAmount,
+  maxQuotePay, // quote-asset units
+  ZAP_NATIVE,  // semantic marker; current buy execution is triggered by msg.value
+  "0x",
+  { value: maxNativePay }, // BNB wei
+);
+```
+
+Core asks ZapRouter for the exact amount of quote required by the trade, spends only the necessary BNB, and refunds the remainder of `msg.value`.
+
+For “spend up to this much BNB” UX, estimate with a native budget, then pass the returned trade's quote requirement as Core's quote ceiling:
+
+```typescript
+const nativeBudget = parseEther("0.1");
+const est = await tools.estimateBuyByBudget(
+  tokenAddress,
+  userAddress,
+  nativeBudget,
+  ZAP_NATIVE,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("budget not executable");
+
+const maxQuotePay = est.curveQuote + est.totalFee; // quote-asset units
+const minTokenOut = est.tokenAmount * 99n / 100n;
+
+await core.buyByBudget(
+  tokenAddress,
+  maxQuotePay,
+  minTokenOut,
+  ZAP_NATIVE,
+  "0x",
+  { value: nativeBudget },
+);
+```
+
+The configured ZapRouter must have a usable native-to-quote route. Re-estimate shortly before submission and handle `CoreErrBadConfig`, `CoreErrBudgetNotExecutable`, `CoreErrSlippage`, and `CoreErrNativeRefundFailed`.
+
 ## 8. Migration and External Market Routing
 
 After each buy, Core calls `MigrateModule.evaluate()`. If it returns `canMigrate = true`, Core automatically migrates. Anyone can also call:
@@ -621,10 +786,16 @@ event MigrateExecuted(
 Decoding rules are determined by `migrateTagId` and `migratedDataVersion`:
 
 - `module.migrate.pcs_v2`: `encodedMigratedData = abi.encode(address pair)`.
+- `module.migrate.bonding_lista_v2`, version `1`: `encodedMigratedData = abi.encode(address pair)`. The pair is the Lista V2 `token/quoteAsset` launch pair.
 - Likwid V2 types: usually `abi.encode(bytes32 poolId)`.
 - PancakeSwap V4 types: usually `abi.encode(bytes32 poolId)`.
 
+Do not treat `token.migratedPools(pool) == true` as proof that the pool is already active. Pool addresses are pre-registered to block external pool transfers during the internal-market phase. Confirm an active Lista V2 route with all of the following:
 
+- `vault.phase() == Migrated`.
+- `MigrateExecuted.migrateTagId` matches `module.migrate.bonding_lista_v2`.
+- `migratedDataVersion == 1`.
+- The decoded pair matches the factory's `getPair(token, quoteAsset)`.
 
 ## 10. Event Monitoring
 
@@ -637,6 +808,7 @@ Events most commonly used by indexers and frontends:
 - `OpenFourCore.TokenPaused`: token-level pause.
 - `OpenFourFeeRouter.FeeAssigned`: fee ownership.
 - `OpenFourFeeRouter.DeveloperFeeClaimed`: developer fee claims.
+- `OpenFourFeeRouter.RebateUpdated`: protocol-fee rebate recipient changes.
 - `OpenFourToken.MigratedPoolUpdated`: migrated pool markers.
 - `OpenFourRegistry.TagRegistered`: maintain a local `tagId -> tag` dictionary.
 
@@ -888,6 +1060,7 @@ Parameter descriptions:
 - `quoteAsset`: fee asset; indexed.
 - `recipient`: fee recipient address; not indexed. Filtering by recipient requires client-side decoding and filtering.
 - `kind`: fee type; indexed. Common types include protocol, tax, developer, migrate protocol, migrate creator, and similar categories. Use the FeeRouter implementation as the source of truth for the exact enum.
+- `kind == 6`: protocol-fee rebate (`FEE_TYPE_REBATE`).
 - `amount`: fee amount, in quote wei.
 - `pending`: `true` means recorded as claimable pending balance, `false` means immediately distributed or transferred out.
 
@@ -953,7 +1126,7 @@ This event is an auxiliary token-layer transfer event. For complete trade semant
 `TokenCreated.encodedTags` is a compact snapshot of each module's `tagId` at creation time. The current length is 57 bytes:
 
 ```text
-byte 0      : schema
+byte 0      : schema, currently 1
 byte 1..8   : token tagId
 byte 9..16  : tokenModule tagId
 byte 17..24 : vault tagId
@@ -976,7 +1149,7 @@ function tagIdFromTag(tag: string) {
 
 function parseEncodedTags(hex: string) {
   if (hex.length !== 2 + 57 * 2) throw new Error("invalid encodedTags length");
-  return {
+  const parsed = {
     schema: dataSlice(hex, 0, 1),
     token: dataSlice(hex, 1, 9),
     tokenModule: dataSlice(hex, 9, 17),
@@ -986,6 +1159,8 @@ function parseEncodedTags(hex: string) {
     migrate: dataSlice(hex, 41, 49),
     customData: dataSlice(hex, 49, 57),
   };
+  if (parsed.schema !== "0x01") throw new Error("unsupported encodedTags schema");
+  return parsed;
 }
 ```
 
@@ -1005,6 +1180,7 @@ Token implementation tags:
 
 - `token.standard`: standard OpenFour ERC20.
 - `token.tax`: TaxToken with transfer-tax and tax-vault behavior.
+- `token.strategy_tax`: StrategyTaxToken with per-token strategy delegation.
 - `token.creator_rewards`: creator rewards token.
 - `token.uni`: Uni-style token with renderer/art or hook-driven behavior.
 
@@ -1012,6 +1188,7 @@ Token module tags:
 
 - `module.token.standard`: initializes standard `OpenFourToken`.
 - `module.token.tax`: initializes TaxToken-style tokens.
+- `module.token.strategy_tax`: initializes StrategyTaxToken and clones its registered tax strategy.
 - `module.token.creator_rewards`: initializes creator rewards tokens.
 - `module.token.uni`: initializes Uni-style tokens.
 
@@ -1035,10 +1212,15 @@ Migrate module tags:
 - `module.migrate.pcs_v4`: PancakeSwap V4 migration.
 - `module.migrate.bonding_pcs_v4`: bonding migration to PancakeSwap V4.
 - `module.migrate.bonding_likwid`: bonding migration to Likwid V2.
+- `module.migrate.bonding_lista_v2`: bonding migration to a Lista V2 pair.
 
 Custom data module tags:
 
 - `module.data.standard`: no-op standard custom data module.
+
+Tax strategy tags are not encoded in the seven `encodedTags` slots. For a `token.strategy_tax` token, call `strategyTag()`:
+
+- `tax_strategy.lista_v2_stake`: Lista V2-compatible swap/liquidity strategy with Lista stake-share distribution.
 
 ## 12. Token Identification and Module Distinction Strategy
 
@@ -1049,6 +1231,8 @@ Recommended identification strategy:
 - Determine full gameplay: parse all seven slots in `encodedTags`.
 - Determine migration target: prioritize the tag in the migrate slot.
 - Determine tax tokens or special gameplay: do not look only at the migrate slot; combine token/vault/trade and other slots.
+- For `token.strategy_tax`, call `strategyTag()` and combine the returned strategy tag with the token-module and migrate tags.
+- Treat `migratedPools(address)` as a transfer-guard/tax-classification marker. Use phase plus `MigrateExecuted` to identify the active external pool.
 - Unknown modules: read `registry.tagOf(tagId)` and preserve the original tagId.
 
 ## 13. Fee Model
@@ -1066,6 +1250,21 @@ Sell:
 ```text
 userReceives = curveQuote - protocolFee - taxFee - devFee
 ```
+
+Token-level tax lifecycle:
+
+- During bonding, FeeRouter transfers quote-denominated tax directly to `TaxToken` or `StrategyTaxToken`. The vault then calls `onBondingTrade()` to notify the token to account for that transfer; `StrategyTaxToken` subsequently forwards the quote tax to its strategy.
+- After migration, a transfer is a buy when `migratedPools[from] && to != vault`, and a sell when `migratedPools[to] && from != vault`. No pool transfer tax is applied before the `Migrated` phase.
+- Post-migration tax is first accumulated in token units. `DispatchReady(0, amount)` signals token work above its threshold; `DispatchReady(1, amount)` signals quote work at its threshold.
+- `TaxToken` implements founder, holder, burn, and liquidity accounting directly. `StrategyTaxToken` forwards tax to `taxStrategy()` and synchronizes eligible holder balances with that strategy.
+- `dispatchTax()` is permissionless. `DispatchReady` is only a keeper hint; check `canDispatchTax()` immediately before submitting.
+
+For dispatch order, manual holder-reward funding, keeper batching, and gas behavior, see [TaxToken Tax and Distribution Mechanism](../mechanisms/tax-token.md).
+
+Do not reuse parameter units between the two implementations:
+
+- `TaxToken`: `buyFeeRate <= 1000`, `100 <= sellFeeRate <= 1000`, and the four distribution rates sum to `100`.
+- `StrategyTaxToken`: both fee rates are `0..1000`, `minShare >= 1 ether`, and the selected strategy defines its own distribution units. `ListaV2StakeTaxStrategy` uses four bps buckets summing to `10_000`.
 
 anti-sniper:
 
@@ -1118,6 +1317,14 @@ feeRouter.claimDevFees(quoteAssets, to);
 ```
 
 Regular trading frontends do not need to call claim APIs.
+
+Protocol-fee rebate:
+
+- When `feeRouter.rebate()` is nonzero, 5% of the protocol fee is sent immediately to that address; the remaining 95% goes to `treasury`.
+- When `rebate() == address(0)`, the full protocol fee goes to `treasury`.
+- Tax, developer, and migration fees are not included in the rebate split.
+- Rebate assignments emit `FeeAssigned` with `kind == 6` and `pending == false`.
+- The rebate is a split of `protocolFee`, not an additional user fee, so the buy/sell amount formulas do not change.
 
 ## 14. Trading Integration Example
 

@@ -768,3 +768,211 @@ Custom data module：
 - 安全審計狀態。
 
 第三方接入方會依賴這些資訊做 UI、索引、交易路由和風險提示。
+
+## 25. 開發未驗證版稅 TaxVault 模板
+
+OpenFour Royalty 模式允許建立者透過平台 `ForwardVault` 包裝器使用未驗證的 TaxVault implementation。參考包裝器已部署於 [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code)。使用此模式不代表 OpenFour 已審核、審計、註冊或認可所提交的模板。
+
+### 25.1 運行結構與版稅分配
+
+建立時需要 ABI 編碼：
+
+```solidity
+ForwardVault.InitParams({
+    template: unverifiedTemplateImplementation,
+    initData: abi.encode(MyTemplate.Params({ /* ... */ }))
+})
+```
+
+`ForwardVault` 使用 EIP-1167 `Clones.clone()` 複製 `template`，然後以 OpenFour token、quote 資產、作為 owner 的 token 建立者、空 `roles` 陣列及 `initData` 初始化 clone。
+
+每次收到稅費時：
+
+- 最多約 `6%` 為版稅份額（`ROYALTY_BPS = 600`），支付至 clone 模板的 `authorWallet()`；Solidity 整數除法會向下取整。
+- 其餘約 `94%` 轉發至 clone 模板。金額小於 17 個資產最小單位時，取整後的版稅為零。
+- 若 `authorWallet()` 返回 `address(0)`、`address(0xdEaD)` 或 `ForwardVault` 本身，則視為作者放棄版稅，全部金額轉發至 clone。
+- native 稅費的版稅部分會先包裝為 wrapped native 再支付給作者，clone 收到 native 幣。
+- ERC20 稅費的兩部分均保持為 quote ERC20。包裝器會忽略 callback 傳入的名義 amount，並分配當前全部餘額，因此預先轉入或意外捐贈的餘額也會被納入。轉帳名義 clone 份額後，`ForwardVault` 會以 best-effort 方式呼叫 `onERC20TaxReceived()`；fee-on-transfer clone 的實際到帳可能少於 callback amount。
+
+第一次收款會將包裝器鎖定為 `Native` 或 `ERC20` 收益模式；之後若收到另一模式的資產，`ForwardVault` 呼叫會以 `RevenueAssetMismatch` revert。這不一定代表整個系統回滾：ERC20 路徑中，`TaxToken` 會先轉帳再呼叫 callback，並捕獲 callback revert，因此資金可能留在包裝器；native 路徑則由 `TaxToken` 記錄失敗交付並等待後續重試。
+
+目前的參考包裝器只在 BSC mainnet（`chainId 56`）及 BSC testnet（`chainId 97`）解析 wrapped native；在其他鏈上初始化會以 `UnsupportedChain` revert。
+
+### 25.2 模板必需介面
+
+提交的地址必須是已部署且可被 clone 的 implementation，並公開：
+
+```solidity
+interface IForwardVaultTemplate {
+    function initialize(
+        address token,
+        address quote,
+        address owner,
+        address[] calldata roles,
+        bytes calldata initParams
+    ) external;
+
+    function taxVaultToken() external view returns (address);
+    function taxVaultQuote() external view returns (address);
+    function authorWallet() external view returns (address);
+    function onERC20TaxReceived(address asset, uint256 amount) external;
+}
+```
+
+初始化後，`taxVaultToken()` 和 `taxVaultQuote()` 必須與 `ForwardVault` 傳入的值完全一致，否則建立會以 `InvalidClonedVault` revert。`authorWallet()` 必須返回有效 ABI address 資料，且應保持穩定，以確保版稅計算可預期。
+
+quote 地址必須是非零合約。模板地址也必須是已部署合約；EOA 或沒有 code 的地址會被拒絕。
+
+implementation 應繼承 `BaseTaxVault`，或完整重現其初始化及 caller 校驗。由於包裝器傳入空 `roles` 陣列，未驗證模板不得依賴 Registry 在初始化時提供 role。
+
+`ForwardVault` 不會把 `updateShares()` 轉發至 clone 模板。來自 `TaxToken` 的呼叫會落到外層 vault 的 no-op 實現，因此依賴 holder share 同步、分紅或 holder accounting 的模板與目前包裝器不相容。除非未來包裝器明確增加該轉發 hook，Royalty 模式只應使用收款型模板。
+
+### 25.3 Clone-safe 實現方式
+
+作為 `template` 使用的 implementation 應：
+
+- 在 implementation constructor 中停用初始化，並將每個 clone 的狀態初始化全部放入 `_customInit()`。
+- 定義唯一 `TYPE_ID`；storage layout 或初始化 ABI 發生變更時使用新的 type/version。
+- 在鏈上校驗所有解碼後的地址、bps、陣列邊界及跨欄位約束。
+- quote 可能是 wrapped native 時，必須能接收 native 轉帳。
+- 支援 fee-on-transfer 資產時使用 `SafeERC20` 和實際餘額差額。
+- 明確限制提款及配置寫入權限；僅有 ownership 並不能讓任意外部呼叫變得安全。
+- 不得依賴 constructor 寫入的可變 storage、僅 proxy 可用的行為或非空 `roles` 陣列。
+
+最小實現模式：
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {BaseTaxVault} from "../contracts/taxvault/BaseTaxVault.sol";
+import {
+    ModuleEncodeSchema,
+    ParamDescriptor
+} from "../contracts/libraries/OpenFourTypes.sol";
+
+contract MyRoyaltyVault is BaseTaxVault {
+    struct Params {
+        address recipient;
+        uint16 recipientBps;
+    }
+
+    bytes32 public constant TYPE_ID =
+        keccak256("MyProject.MyRoyaltyVault.v1");
+
+    address public recipient;
+    uint16 public recipientBps;
+
+    constructor() {
+        _disableInitializers();
+    }
+
+    function authorWallet() public pure override returns (address) {
+        return 0x1234567890123456789012345678901234567890;
+    }
+
+    function _customInit(
+        address[] calldata,
+        bytes calldata initParams
+    ) internal override {
+        _setTypeId(TYPE_ID);
+        Params memory p = abi.decode(initParams, (Params));
+        require(p.recipient != address(0), "zero recipient");
+        require(p.recipientBps <= 10_000, "invalid bps");
+        recipient = p.recipient;
+        recipientBps = p.recipientBps;
+    }
+
+    function onERC20TaxReceived(
+        address asset,
+        uint256 amount
+    ) public override {
+        super.onERC20TaxReceived(asset, amount);
+        // 執行模板特定的 accounting 或分配。
+    }
+
+    function moduleEncodeSchema()
+        external
+        pure
+        override
+        returns (ModuleEncodeSchema memory)
+    {
+        ParamDescriptor[] memory p = new ParamDescriptor[](2);
+        p[0] = ParamDescriptor({
+            name: "recipient",
+            abiType: "address",
+            decimals: 0,
+            optional: false,
+            title: "Recipient",
+            defaultValue: "",
+            hint: "Template payout recipient",
+            minValue: "",
+            maxValue: ""
+        });
+        p[1] = ParamDescriptor({
+            name: "recipientBps",
+            abiType: "uint16",
+            decimals: 0,
+            optional: false,
+            title: "Recipient Share (bps)",
+            defaultValue: "10000",
+            hint: "Share out of 10000",
+            minValue: "0",
+            maxValue: "10000"
+        });
+        return ModuleEncodeSchema("taxvault", 1, p);
+    }
+}
+```
+
+`authorWallet()` 返回的是模板開發者的版稅收款地址，不是 token 建立者，也不一定是 vault owner。
+
+### 25.4 必須定義 Schema
+
+上面的完整示例已實現 `moduleEncodeSchema()`，用於描述內層 `initData`。欄位順序及 ABI 類型必須與模板的 `Params` struct 完全一致。
+
+`ForwardVault` 在 clone 初始化時不會呼叫內層 schema；其鏈上運行時只解碼固定的外層 `(template, initData)` tuple。但繼承抽象 `BaseTaxVault` 時仍必須實現該函式，模板作者也必須公開 schema，讓 Royalty 前端直接從所提交的 implementation 查詢並編碼 `initData`。
+
+前端首先將模板欄位編碼為單一 tuple：
+
+```typescript
+const initData = AbiCoder.defaultAbiCoder().encode(
+  ["(address,uint16)"],
+  [[recipient, recipientBps]],
+);
+```
+
+然後再編碼固定的外層 `ForwardVault` schema：
+
+```text
+kind: SafuSkill.ForwardVault
+version: 1
+fields:
+  template address
+  initData bytes
+```
+
+```typescript
+const forwardVaultParams = AbiCoder.defaultAbiCoder().encode(
+  ["(address,bytes)"],
+  [[templateAddress, initData]],
+);
+```
+
+不得將內外層欄位展平成同一個 ABI tuple。`initData` 屬於 clone 模板，而 `(template, initData)` 屬於 `ForwardVault`。
+
+### 25.5 提交與安全檢查
+
+填入未驗證模板地址前：
+
+- 確認部署 bytecode 屬於預期的直接 implementation。
+- 確認 clone 的 `initialize()` 無法被呼叫兩次。
+- 模擬初始化並確認 token/quote getter 完全匹配。
+- 確認 `authorWallet()` 返回預期的 immutable 或治理控制地址。
+- 測試所選 quote 支援的 native 與 ERC20 收款路徑。
+- 測試 fee-on-transfer 行為，使用實際收款餘額而不是 callback 的名義 amount。
+- 測試 callback revert、native 轉帳失敗、重入、提款權限及零額/dust。
+- 確認 schema 產生的 `initData` 能精確解碼為預期 `Params`。
+- 在可行時公開 source、compiler settings、測試及審計報告。
+
+`ForwardVault` clone 建立後，模板及初始化配置不可替換。合約缺陷可能永久鎖定或錯誤路由稅費，因此只有在建立者能獨立理解並信任所提交合約時才應繼續使用此模式。

@@ -854,6 +854,25 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "oldRouter",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newRouter",
+        "type": "address"
+      }
+    ],
+    "name": "ZapRouterUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "DEFAULT_ADMIN_ROLE",
     "outputs": [
@@ -906,7 +925,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "maxQuotePayAmount",
+        "name": "maxPayAmount",
         "type": "uint256"
       },
       {
@@ -934,7 +953,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "maxQuotePayAmount",
+        "name": "maxPayAmount",
         "type": "uint256"
       },
       {
@@ -1291,7 +1310,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "minQuoteRecvAmount",
+        "name": "minReceiveAmount",
         "type": "uint256"
       },
       {
@@ -1381,6 +1400,32 @@
       }
     ],
     "name": "setTokenPaused",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "setTokenTerminal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newRouter",
+        "type": "address"
+      }
+    ],
+    "name": "setZapRouter",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1617,6 +1662,19 @@
   {
     "inputs": [],
     "name": "wrappedNative",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "zapRouter",
     "outputs": [
       {
         "internalType": "address",
