@@ -168,6 +168,8 @@ Current interface names:
 - `estimateSell(token, trader, amount, options, proof)`: estimate a sell by exact token amount.
 - `estimateBuyByBudget(token, trader, maxQuotePayAmount, options, proof)`: estimate how many tokens can be bought with a quote budget.
 
+These interfaces are non-`view` because a ZapRouter estimate may call a V3 quoter whose interface is not read-only. Off-chain ethers v6 code must use `method.staticCall(...)` (ethers v5: `contract.callStatic.method(...)`) so the request is executed through `eth_call` instead of being sent as a transaction. Use this form even when `options == 0`.
+
 ### 5.1 TradeEstimate
 
 Core fields returned by `OpenFourTools` estimates:
@@ -184,7 +186,7 @@ If `tokenAmount == 0`, the token is currently not tradable or the estimate faile
 ### 5.2 Estimate Buy by Token Amount
 
 ```typescript
-const est = await tools.estimateBuy(token, trader, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, trader, amount, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 const maxQuotePay = est.userPays * 101n / 100n; // 1% slippage buffer
@@ -193,7 +195,7 @@ const maxQuotePay = est.userPays * 101n / 100n; // 1% slippage buffer
 ### 5.3 Estimate Sell by Token Amount
 
 ```typescript
-const est = await tools.estimateSell(token, trader, amount, 0, "0x");
+const est = await tools.estimateSell.staticCall(token, trader, amount, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 const minQuoteReceive = est.userReceives * 99n / 100n;
@@ -202,7 +204,7 @@ const minQuoteReceive = est.userReceives * 99n / 100n;
 ### 5.4 Estimate Buy by Quote Budget
 
 ```typescript
-const est = await tools.estimateBuyByBudget(token, trader, budget, 0, "0x");
+const est = await tools.estimateBuyByBudget.staticCall(token, trader, budget, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 // Native payment example when quoteAsset == wrappedNative; for ERC20 quote, approve first and pass no value.
@@ -540,7 +542,7 @@ function sell(address token, uint256 amount, uint256 minQuoteRecvAmount, uint256
 Native quote path:
 
 ```typescript
-const est = await tools.estimateBuy(token, user, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, user, amount, 0, "0x");
 const maxPay = est.userPays * 101n / 100n;
 
 await core.buy(token, amount, maxPay, 0, "0x", { value: maxPay });
@@ -558,7 +560,7 @@ When `quoteAsset == wrappedNative`, users may also approve WBNB first and call w
 ### 7.2 Buy by Budget
 
 ```typescript
-const est = await tools.estimateBuyByBudget(token, user, budget, 0, "0x");
+const est = await tools.estimateBuyByBudget.staticCall(token, user, budget, 0, "0x");
 await core.buyByBudget(token, budget, est.tokenAmount, 0, "0x", { value: budget });
 ```
 
@@ -569,7 +571,7 @@ For ERC20 quote, approve `budget` first and use `msg.value = 0`.
 ```typescript
 await tokenContract.approve(coreAddress, amount);
 
-const est = await tools.estimateSell(token, user, amount, 0, "0x");
+const est = await tools.estimateSell.staticCall(token, user, amount, 0, "0x");
 const minReceive = est.userReceives * 99n / 100n;
 
 await core.sell(token, amount, minReceive, 0, "0x");
@@ -686,14 +688,14 @@ if (cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()) {
 For an exact meme-token amount, obtain both quote-asset and native estimates. The quote estimate supplies Core's quote ceiling; the zap estimate supplies the BNB value:
 
 ```typescript
-const quoteEst = await tools.estimateBuy(
+const quoteEst = await tools.estimateBuy.staticCall(
   tokenAddress,
   userAddress,
   tokenAmount,
   0n,
   "0x",
 );
-const nativeEst = await tools.estimateBuy(
+const nativeEst = await tools.estimateBuy.staticCall(
   tokenAddress,
   userAddress,
   tokenAmount,
@@ -723,7 +725,7 @@ For “spend up to this much BNB” UX, estimate with a native budget, then pass
 
 ```typescript
 const nativeBudget = parseEther("0.1");
-const est = await tools.estimateBuyByBudget(
+const est = await tools.estimateBuyByBudget.staticCall(
   tokenAddress,
   userAddress,
   nativeBudget,
@@ -1421,7 +1423,7 @@ async function buyExactTokenAmount({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateBuy(tokenAddress, trader, tokenAmount, 0, "0x");
+  const est = await tools.estimateBuy.staticCall(tokenAddress, trader, tokenAmount, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("buy not executable");
 
   // Buy slippage: est.userPays is the current estimated payment; maxQuotePay is the user's payment ceiling.
@@ -1468,7 +1470,7 @@ async function buyByBudget({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateBuyByBudget(tokenAddress, trader, budget, 0, "0x");
+  const est = await tools.estimateBuyByBudget.staticCall(tokenAddress, trader, budget, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("budget not executable");
 
   // Budget buy: budget is the payment ceiling; minAmountOut is the token amount floor.
@@ -1512,7 +1514,7 @@ async function sellExactTokenAmount({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateSell(tokenAddress, trader, tokenAmount, 0, "0x");
+  const est = await tools.estimateSell.staticCall(tokenAddress, trader, tokenAmount, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("sell not executable");
 
   // Sell slippage: est.userReceives is the current estimated receive amount; minQuoteReceive is the user's acceptable floor.

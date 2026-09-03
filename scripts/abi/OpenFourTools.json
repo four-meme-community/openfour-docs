@@ -356,7 +356,7 @@
         "type": "tuple"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -373,7 +373,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "maxQuotePayAmount",
+        "name": "maxPayAmount",
         "type": "uint256"
       },
       {
@@ -427,7 +427,7 @@
         "type": "tuple"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -498,7 +498,7 @@
         "type": "tuple"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

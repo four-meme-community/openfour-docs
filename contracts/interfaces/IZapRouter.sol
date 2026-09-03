@@ -5,7 +5,8 @@ pragma solidity ^0.8.20;
 /// @notice Public configured-route quoting and execution for ERC-20 and native multi-DEX swaps.
 /// @dev Quote functions are not declared `view` because some external DEX quoters may write
 ///      transient state. `midTokens` contains configured intermediate assets and is empty for
-///      a direct route.
+///      a direct route. Off-chain ethers v6 clients must invoke quote functions with
+///      `method.staticCall(...)` (ethers v5: `contract.callStatic.method(...)`).
 interface IZapRouter {
     /// @notice Quote the output for an exact ERC-20 input through the configured route.
     /// @param tokenIn Input token.

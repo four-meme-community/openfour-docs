@@ -168,6 +168,8 @@ IOpenFourVault(vault).soldAmount();
 - `estimateSell(token, trader, amount, options, proof)`：按精確 token 數量預估賣出。
 - `estimateBuyByBudget(token, trader, maxQuotePayAmount, options, proof)`：按 quote 預算預估可買 token 數量。
 
+這些介面不是 `view`，因為 ZapRouter 預估可能呼叫介面並非唯讀的 V3 quoter。鏈下 ethers v6 程式碼必須使用 `method.staticCall(...)`（ethers v5：`contract.callStatic.method(...)`），讓請求透過 `eth_call` 執行，而不是發送交易。即使 `options == 0` 也應使用此形式。
+
 ### 5.1 TradeEstimate
 
 `OpenFourTools` 預估返回的核心欄位：
@@ -184,7 +186,7 @@ IOpenFourVault(vault).soldAmount();
 ### 5.2 按 token 數量預估買入
 
 ```typescript
-const est = await tools.estimateBuy(token, trader, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, trader, amount, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 const maxQuotePay = est.userPays * 101n / 100n; // 1% slippage buffer
@@ -193,7 +195,7 @@ const maxQuotePay = est.userPays * 101n / 100n; // 1% slippage buffer
 ### 5.3 按 token 數量預估賣出
 
 ```typescript
-const est = await tools.estimateSell(token, trader, amount, 0, "0x");
+const est = await tools.estimateSell.staticCall(token, trader, amount, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 const minQuoteReceive = est.userReceives * 99n / 100n;
@@ -202,7 +204,7 @@ const minQuoteReceive = est.userReceives * 99n / 100n;
 ### 5.4 按 quote 預算預估買入
 
 ```typescript
-const est = await tools.estimateBuyByBudget(token, trader, budget, 0, "0x");
+const est = await tools.estimateBuyByBudget.staticCall(token, trader, budget, 0, "0x");
 if (est.tokenAmount === 0n) return;
 
 // quoteAsset == wrappedNative 的 native 支付範例；ERC20 quote 需先 approve，再不傳 value。
@@ -540,7 +542,7 @@ function sell(address token, uint256 amount, uint256 minQuoteRecvAmount, uint256
 Native quote 路徑：
 
 ```typescript
-const est = await tools.estimateBuy(token, user, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, user, amount, 0, "0x");
 const maxPay = est.userPays * 101n / 100n;
 
 await core.buy(token, amount, maxPay, 0, "0x", { value: maxPay });
@@ -558,7 +560,7 @@ await core.buy(token, amount, maxPay, 0, "0x");
 ### 7.2 按預算買入
 
 ```typescript
-const est = await tools.estimateBuyByBudget(token, user, budget, 0, "0x");
+const est = await tools.estimateBuyByBudget.staticCall(token, user, budget, 0, "0x");
 await core.buyByBudget(token, budget, est.tokenAmount, 0, "0x", { value: budget });
 ```
 
@@ -569,7 +571,7 @@ ERC20 quote 時先 approve `budget`，再用 `msg.value = 0`。
 ```typescript
 await tokenContract.approve(coreAddress, amount);
 
-const est = await tools.estimateSell(token, user, amount, 0, "0x");
+const est = await tools.estimateSell.staticCall(token, user, amount, 0, "0x");
 const minReceive = est.userReceives * 99n / 100n;
 
 await core.sell(token, amount, minReceive, 0, "0x");
@@ -686,14 +688,14 @@ if (cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()) {
 按固定 meme-token 數量買入時，需要同時取得 quote-asset 和 native 兩份預估。Quote 預估提供 Core 使用的 quote 上限，zap 預估提供 BNB 金額：
 
 ```typescript
-const quoteEst = await tools.estimateBuy(
+const quoteEst = await tools.estimateBuy.staticCall(
   tokenAddress,
   userAddress,
   tokenAmount,
   0n,
   "0x",
 );
-const nativeEst = await tools.estimateBuy(
+const nativeEst = await tools.estimateBuy.staticCall(
   tokenAddress,
   userAddress,
   tokenAmount,
@@ -723,7 +725,7 @@ Core 透過 ZapRouter 精確取得交易所需 quote，只消耗必要 BNB，並
 
 ```typescript
 const nativeBudget = parseEther("0.1");
-const est = await tools.estimateBuyByBudget(
+const est = await tools.estimateBuyByBudget.staticCall(
   tokenAddress,
   userAddress,
   nativeBudget,
@@ -1421,7 +1423,7 @@ async function buyExactTokenAmount({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateBuy(tokenAddress, trader, tokenAmount, 0, "0x");
+  const est = await tools.estimateBuy.staticCall(tokenAddress, trader, tokenAmount, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("buy not executable");
 
   // Buy slippage: est.userPays 是目前預估支付額；maxQuotePay 是使用者願意支付的上限。
@@ -1468,7 +1470,7 @@ async function buyByBudget({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateBuyByBudget(tokenAddress, trader, budget, 0, "0x");
+  const est = await tools.estimateBuyByBudget.staticCall(tokenAddress, trader, budget, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("budget not executable");
 
   // Budget buy: budget 是支付上限；minAmountOut 是 token 數量下限。
@@ -1512,7 +1514,7 @@ async function sellExactTokenAmount({
   if (phase !== Phase.Trading) throw new Error("OpenFour trading is not active");
 
   const trader = await signer.getAddress();
-  const est = await tools.estimateSell(tokenAddress, trader, tokenAmount, 0, "0x");
+  const est = await tools.estimateSell.staticCall(tokenAddress, trader, tokenAmount, 0, "0x");
   if (est.tokenAmount === 0n) throw new Error("sell not executable");
 
   // Sell slippage: est.userReceives 是目前預估收款；minQuoteReceive 是使用者可接受下限。

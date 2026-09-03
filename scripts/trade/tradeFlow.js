@@ -43,7 +43,9 @@ export async function estimateBuyExactAmount({
   proof = '0x',
 }) {
   const tools = new Contract(toolsAddress, OpenFourToolsAbi, provider)
-  return parseTradeEstimate(await tools.estimateBuy(token, trader, amount, options, proof))
+  return parseTradeEstimate(
+    await tools.estimateBuy.staticCall(token, trader, amount, options, proof),
+  )
 }
 
 export async function estimateBuyByBudget({
@@ -57,7 +59,13 @@ export async function estimateBuyByBudget({
 }) {
   const tools = new Contract(toolsAddress, OpenFourToolsAbi, provider)
   return parseTradeEstimate(
-    await tools.estimateBuyByBudget(token, trader, maxQuotePayAmount, options, proof),
+    await tools.estimateBuyByBudget.staticCall(
+      token,
+      trader,
+      maxQuotePayAmount,
+      options,
+      proof,
+    ),
   )
 }
 
@@ -72,7 +80,9 @@ export async function estimateSellExactAmount({
 }) {
   const tools = new Contract(toolsAddress, OpenFourToolsAbi, provider)
   const options = receiveWrappedNative ? SELL_OPTION_RECEIVE_WRAPPED_NATIVE : 0n
-  return parseTradeEstimate(await tools.estimateSell(token, trader, amount, options, proof))
+  return parseTradeEstimate(
+    await tools.estimateSell.staticCall(token, trader, amount, options, proof),
+  )
 }
 
 export function buildBuyExactAmountTx({

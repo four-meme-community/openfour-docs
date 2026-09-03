@@ -10,6 +10,7 @@ This directory contains OpenFour documentation for third-party integration, modu
 
 - Added `TaxToken` and `StrategyTaxToken` identification, tax lifecycle, distribution, manual holder rewards, keeper operations, and gas considerations.
 - Documented Core's built-in ZapRouter flow for `BNB -> quoteAsset -> meme token`, including estimation, exact-amount buys, budget buys, refunds, and taxed-token routes.
+- Clarified that non-view `OpenFourTools` estimates and ZapRouter quotes require off-chain `staticCall`, with updated public interfaces and ABIs.
 - Added `OpenFourFeeRouter.rebate` configuration, events, calculation boundaries, and integration guidance.
 - Added Lista V2 migration, pool validation, strategy-tax routing, Lista vault staking, share claiming/redemption, and keeper workflows.
 - Expanded tag, module type, token type, migrated-pool discovery, and routing judgment rules.
