@@ -413,7 +413,7 @@ Query 參數：
 | `data[].symbolAddress` | `STRING` | quote address，例如 `0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`。 |
 | `data[].totalSupply` | `STRING` | 預設 total supply 展示值。 |
 | `data[].saleAmount` | `STRING` | 預設 sale amount 展示值。 |
-| `data[].createFee` | `STRING` | 创币费用。 |
+| `data[].createFee` | `STRING` | 创币费用 BNB。 |
 | `data[].decimals` | `NUMBER` | quote 精度。 |
 
 回應示例：
