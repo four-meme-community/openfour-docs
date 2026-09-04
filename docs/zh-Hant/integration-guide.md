@@ -409,10 +409,12 @@ Query 參數：
 | `msg` | `STRING` | API 狀態訊息。 |
 | `data` | `ARRAY` | 所選 template 支援的 quote / 供應量配置列表。 |
 | `data[].id` | `NUMBER` | 配置行 id。 |
-| `data[].symbol` | `STRING` | quote symbol，例如 `BNB`。 |
+| `data[].symbolAddress` | `STRING` | quote symbol，例如 `BNB`。 |
+| `data[].address` | `STRING` | quote address，例如 `0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`。 |
 | `data[].totalSupply` | `STRING` | 預設 total supply 展示值。 |
 | `data[].saleAmount` | `STRING` | 預設 sale amount 展示值。 |
-| `data[].raisedAmount` | `STRING` | 預設 raise amount 展示值。 |
+| `data[].createFee` | `STRING` | 创币费用。 |
+| `data[].decimals` | `NUMBER` | quote 精度。 |
 
 回應示例：
 
@@ -424,14 +426,19 @@ Query 參數：
     {
       "id": 1,
       "symbol": "BNB",
+      "symbolAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "fullName": "BNB",
       "totalSupply": "1000000000",
       "saleAmount": "800000000",
-      "raisedAmount": "0.2"
+      "raisedAmount": "18",
+      "createFee": "0",
+      "decimals": 18
     }
   ]
 }
 ```
 
+            
 此回應可用於預填 `maxSupply`、`saleAmount`、`raiseAmount` 等建立表單預設值；模組專屬欄位仍須從鏈上 schema 讀取，見 [§6.2](#62-讀取-schema)。
 
 ### 6.7 從 API 取得簽名並傳送 createToken
