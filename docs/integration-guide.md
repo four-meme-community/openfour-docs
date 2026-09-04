@@ -410,9 +410,12 @@ Response fields:
 | `data` | `ARRAY` | Supported quote / supply config list for the selected template. |
 | `data[].id` | `NUMBER` | Config row id. |
 | `data[].symbol` | `STRING` | Quote symbol, for example `BNB`. |
+| `data[].symbolAddress` | `STRING` | quote address，ep. `0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c`。 |
 | `data[].totalSupply` | `STRING` | Default total supply display value. |
 | `data[].saleAmount` | `STRING` | Default sale amount display value. |
 | `data[].raisedAmount` | `STRING` | Default raise amount display value. |
+| `data[].createFee` | `STRING` | create fee in BNB. |
+| `data[].decimals` | `NUMBER` | quote decimals. |
 
 Response example:
 
@@ -424,9 +427,13 @@ Response example:
     {
       "id": 1,
       "symbol": "BNB",
+      "symbolAddress": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      "fullName": "BNB",
       "totalSupply": "1000000000",
       "saleAmount": "800000000",
-      "raisedAmount": "0.2"
+      "raisedAmount": "18",
+      "createFee": "0",
+      "decimals": 18
     }
   ]
 }
