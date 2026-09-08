@@ -544,52 +544,67 @@ function buyByBudget(address token, uint256 maxQuotePayAmount, uint256 minAmount
 function sell(address token, uint256 amount, uint256 minQuoteRecvAmount, uint256 options, bytes calldata proof) external;
 ```
 
-### 7.1 買入
+內盤支援以下四種明確的結算路徑：
 
-Native quote 路徑：
+1. 使用 Token 的 ERC20 `quoteAsset` 買入。
+2. 使用 BNB 買入，必要時由 Core 執行轉換。
+3. 賣出並接收 Token 的 ERC20 `quoteAsset`。
+4. 賣出並接收 BNB，必要時由 Core 執行轉換。
+
+### 7.1 使用 Quote Asset 買入
 
 ```typescript
-const est = await tools.estimateBuy.staticCall(token, user, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, user, amount, 0n, "0x");
+if (est.tokenAmount === 0n) throw new Error("buy not executable");
+
 const maxPay = est.userPays * 101n / 100n;
-
-await core.buy(token, amount, maxPay, 0, "0x", { value: maxPay });
-```
-
-ERC20 quote 路徑：
-
-```typescript
 await quote.approve(coreAddress, maxPay);
-await core.buy(token, amount, maxPay, 0, "0x");
+await core.buy(token, amount, maxPay, 0n, "0x");
 ```
 
-當 `quoteAsset == wrappedNative` 時，也可以先 approve WBNB，再不傳 `msg.value`。
+此處 `quote` 是位於 `cfg.quoteAsset` 的 ERC20。當 `quoteAsset == wrappedNative` 時，此路徑使用 WBNB 而非 BNB 支付。預估值、approve 金額和 `maxPay` 均以 quote-asset wei 計價。
 
-### 7.2 按預算買入
+### 7.2 使用 Quote-Asset 預算買入
 
 ```typescript
-const est = await tools.estimateBuyByBudget.staticCall(token, user, budget, 0, "0x");
-await core.buyByBudget(token, budget, est.tokenAmount, 0, "0x", { value: budget });
+const est = await tools.estimateBuyByBudget.staticCall(token, user, quoteBudget, 0n, "0x");
+if (est.tokenAmount === 0n) throw new Error("budget not executable");
+
+const minTokenOut = est.tokenAmount * 99n / 100n;
+await quote.approve(coreAddress, quoteBudget);
+await core.buyByBudget(token, quoteBudget, minTokenOut, 0n, "0x");
 ```
 
-ERC20 quote 時先 approve `budget`，再用 `msg.value = 0`。
+`quoteBudget` 以 `cfg.quoteAsset` wei 計價。此路徑不要傳送 `msg.value`。
 
-### 7.3 賣出
+### 7.3 賣出並接收 Quote Asset
 
 ```typescript
 await tokenContract.approve(coreAddress, amount);
 
-const est = await tools.estimateSell.staticCall(token, user, amount, 0, "0x");
+const RECEIVE_WRAPPED_NATIVE = 1n << 0n;
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(token);
+const sellToQuoteOptions =
+  cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()
+    ? RECEIVE_WRAPPED_NATIVE
+    : 0n;
+
+const est = await tools.estimateSell.staticCall(
+  token,
+  user,
+  amount,
+  sellToQuoteOptions,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("sell not executable");
+
 const minReceive = est.userReceives * 99n / 100n;
 
-await core.sell(token, amount, minReceive, 0, "0x");
+await core.sell(token, amount, minReceive, sellToQuoteOptions, "0x");
 ```
 
-如果 `quoteAsset == wrappedNative`：
-
-- `options = 0`：預設收到 native。
-- `options & 1 == 1`：收到 wrapped native ERC20。
-
-賣出不收 anti-sniper。
+當 quote 是 WBNB 時，bit0 可防止 Core 將 quote 解包為 BNB。其它 quote asset 使用 `options = 0`。`est.userReceives` 和 `minReceive` 均以 quote-asset wei 計價。賣出不收 anti-sniper。
 
 ### 7.4 交易前檢查
 
@@ -755,6 +770,58 @@ await core.buyByBudget(
 ```
 
 已配置 ZapRouter 必須存在可用的 native-to-quote 路由。提交前應重新預估，並處理 `CoreErrBadConfig`、`CoreErrBudgetNotExecutable`、`CoreErrSlippage` 和 `CoreErrNativeRefundFailed`。
+
+### 7.7 透過 Core 內建 Zap 賣出 Meme Token 並接收 BNB
+
+Token 仍處於 OpenFour `Trading` phase 時，Core 可以直接將 sell 以 BNB 結算：
+
+```text
+使用者 meme token
+  -> Vault
+  -> 扣除費用後的 quote 收益
+  -> Core.zapRouter().swapTokenToNative(quoteAsset -> BNB)，quoteAsset 不是 WBNB 時
+  -> BNB 發送給使用者
+```
+
+使用者將 meme token approve 給 `OpenFourCore`，而不是 `ZapRouter`。Quote asset 是 WBNB 時，Core 會直接解包，不需要多資產 zap 路由。
+
+```typescript
+const ZAP_NATIVE = 1n << 1n;
+const zapRouter = await core.zapRouter();
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(tokenAddress);
+const quoteIsWrappedNative =
+  cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase();
+
+if (!quoteIsWrappedNative && zapRouter === ZeroAddress) {
+  throw new Error("Core ZapRouter is not configured");
+}
+
+// WBNB quote：options=0 直接將 WBNB 解包成 BNB。
+// 其它 quote：bit1 透過 ZapRouter 將 quote 收益轉換為 BNB。
+const sellToNativeOptions = quoteIsWrappedNative ? 0n : ZAP_NATIVE;
+const est = await tools.estimateSell.staticCall(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  sellToNativeOptions,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("sell not executable");
+
+const minNativeReceive = est.userReceives * 99n / 100n;
+
+await tokenContract.approve(coreAddress, tokenAmount);
+await core.sell(
+  tokenAddress,
+  tokenAmount,
+  minNativeReceive, // BNB wei
+  sellToNativeOptions,
+  "0x",
+);
+```
+
+Quote 不是 WBNB 時，已配置的 ZapRouter 必須存在可用的 quote-to-native 路由。由於 `est.userReceives` 包含當前 zap 報價，提交前應重新預估。若要接收 WBNB，需同時設定 bit0；`minNativeReceive` 仍以 WBNB wei 計價。
 
 ## 8. 遷移與外盤路由
 

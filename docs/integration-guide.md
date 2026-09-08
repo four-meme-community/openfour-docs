@@ -544,52 +544,67 @@ function buyByBudget(address token, uint256 maxQuotePayAmount, uint256 minAmount
 function sell(address token, uint256 amount, uint256 minQuoteRecvAmount, uint256 options, bytes calldata proof) external;
 ```
 
-### 7.1 Buy
+The internal market supports four explicit settlement paths:
 
-Native quote path:
+1. Buy with the token's ERC20 `quoteAsset`.
+2. Buy with BNB, converting through Core when necessary.
+3. Sell and receive the token's ERC20 `quoteAsset`.
+4. Sell and receive BNB, converting through Core when necessary.
+
+### 7.1 Buy with the Quote Asset
 
 ```typescript
-const est = await tools.estimateBuy.staticCall(token, user, amount, 0, "0x");
+const est = await tools.estimateBuy.staticCall(token, user, amount, 0n, "0x");
+if (est.tokenAmount === 0n) throw new Error("buy not executable");
+
 const maxPay = est.userPays * 101n / 100n;
-
-await core.buy(token, amount, maxPay, 0, "0x", { value: maxPay });
-```
-
-ERC20 quote path:
-
-```typescript
 await quote.approve(coreAddress, maxPay);
-await core.buy(token, amount, maxPay, 0, "0x");
+await core.buy(token, amount, maxPay, 0n, "0x");
 ```
 
-When `quoteAsset == wrappedNative`, users may also approve WBNB first and call without passing `msg.value`.
+Here `quote` is the ERC20 at `cfg.quoteAsset`. When `quoteAsset == wrappedNative`, this path pays with WBNB rather than BNB. The estimate, approval, and `maxPay` are all denominated in quote-asset wei.
 
-### 7.2 Buy by Budget
+### 7.2 Buy with a Quote-Asset Budget
 
 ```typescript
-const est = await tools.estimateBuyByBudget.staticCall(token, user, budget, 0, "0x");
-await core.buyByBudget(token, budget, est.tokenAmount, 0, "0x", { value: budget });
+const est = await tools.estimateBuyByBudget.staticCall(token, user, quoteBudget, 0n, "0x");
+if (est.tokenAmount === 0n) throw new Error("budget not executable");
+
+const minTokenOut = est.tokenAmount * 99n / 100n;
+await quote.approve(coreAddress, quoteBudget);
+await core.buyByBudget(token, quoteBudget, minTokenOut, 0n, "0x");
 ```
 
-For ERC20 quote, approve `budget` first and use `msg.value = 0`.
+`quoteBudget` is denominated in `cfg.quoteAsset` wei. Do not send `msg.value` on this path.
 
-### 7.3 Sell
+### 7.3 Sell and Receive the Quote Asset
 
 ```typescript
 await tokenContract.approve(coreAddress, amount);
 
-const est = await tools.estimateSell.staticCall(token, user, amount, 0, "0x");
+const RECEIVE_WRAPPED_NATIVE = 1n << 0n;
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(token);
+const sellToQuoteOptions =
+  cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase()
+    ? RECEIVE_WRAPPED_NATIVE
+    : 0n;
+
+const est = await tools.estimateSell.staticCall(
+  token,
+  user,
+  amount,
+  sellToQuoteOptions,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("sell not executable");
+
 const minReceive = est.userReceives * 99n / 100n;
 
-await core.sell(token, amount, minReceive, 0, "0x");
+await core.sell(token, amount, minReceive, sellToQuoteOptions, "0x");
 ```
 
-If `quoteAsset == wrappedNative`:
-
-- `options = 0`: receive native by default.
-- `options & 1 == 1`: receive wrapped native ERC20.
-
-Sell does not charge anti-sniper.
+For a WBNB quote, bit0 prevents Core from unwrapping the quote into BNB. For any other quote asset, `options = 0`. `est.userReceives` and `minReceive` are denominated in quote-asset wei. Sell does not charge anti-sniper.
 
 ### 7.4 Pre-Trade Checks
 
@@ -755,6 +770,58 @@ await core.buyByBudget(
 ```
 
 The configured ZapRouter must have a usable native-to-quote route. Re-estimate shortly before submission and handle `CoreErrBadConfig`, `CoreErrBudgetNotExecutable`, `CoreErrSlippage`, and `CoreErrNativeRefundFailed`.
+
+### 7.7 Selling a Meme Token for BNB Through Core's Built-in Zap
+
+When the token is still in the OpenFour `Trading` phase, Core can settle a sell directly in BNB:
+
+```text
+user meme token
+  -> Vault
+  -> quote proceeds after fees
+  -> Core.zapRouter().swapTokenToNative(quoteAsset -> BNB), when quoteAsset is not WBNB
+  -> BNB to user
+```
+
+The user approves the meme token to `OpenFourCore`, not to `ZapRouter`. When the quote asset is WBNB, Core unwraps it directly and no multi-asset zap route is needed.
+
+```typescript
+const ZAP_NATIVE = 1n << 1n;
+const zapRouter = await core.zapRouter();
+const wrappedNative = await core.wrappedNative();
+const cfg = await core.tokens(tokenAddress);
+const quoteIsWrappedNative =
+  cfg.quoteAsset.toLowerCase() === wrappedNative.toLowerCase();
+
+if (!quoteIsWrappedNative && zapRouter === ZeroAddress) {
+  throw new Error("Core ZapRouter is not configured");
+}
+
+// WBNB quote: options=0 unwraps WBNB directly into BNB.
+// Other quotes: bit1 converts quote proceeds into BNB through ZapRouter.
+const sellToNativeOptions = quoteIsWrappedNative ? 0n : ZAP_NATIVE;
+const est = await tools.estimateSell.staticCall(
+  tokenAddress,
+  userAddress,
+  tokenAmount,
+  sellToNativeOptions,
+  "0x",
+);
+if (est.tokenAmount === 0n) throw new Error("sell not executable");
+
+const minNativeReceive = est.userReceives * 99n / 100n;
+
+await tokenContract.approve(coreAddress, tokenAmount);
+await core.sell(
+  tokenAddress,
+  tokenAmount,
+  minNativeReceive, // BNB wei
+  sellToNativeOptions,
+  "0x",
+);
+```
+
+For a non-WBNB quote, the configured ZapRouter must have a usable quote-to-native route. Re-estimate shortly before submission because `est.userReceives` includes the current zap quote. To receive WBNB instead, set bit0 as well; `minNativeReceive` remains denominated in WBNB wei.
 
 ## 8. Migration and External Market Routing
 
