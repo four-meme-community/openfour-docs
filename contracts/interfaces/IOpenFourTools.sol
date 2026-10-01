@@ -25,6 +25,7 @@ interface IOpenFourTools {
         uint256 createFee,
         uint256 presaleQuote,
         bool antiSniperEnabled,
+        address partner,
         OpenFourTypes.TokenInitParams calldata initParams
     ) external view returns (bytes memory);
 

@@ -95,8 +95,11 @@ library OpenFourTypes {
         uint256 presetId;
         uint256 validTimestamp;
         uint256 createFee;
+        /// @dev Quote amount (gross, including fees) for an immediate post-creation buy.
+        ///      0 = no presale. Excess quote beyond actual spend is refunded to the creator.
         uint256 presaleQuote;
         bool antiSniperEnabled;
+        address partner;
         TokenInitParams initParams;
     }
 

@@ -78,6 +78,37 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "PartnerFeeClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "presetId",
         "type": "uint256"
@@ -117,6 +148,12 @@
         "internalType": "uint8",
         "name": "maxTaxTiers",
         "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "partnerProtocolShareBps",
+        "type": "uint256"
       }
     ],
     "name": "PresetFeeConfigUpdated",
@@ -230,6 +267,11 @@
         "internalType": "uint256",
         "name": "antiSniperFee",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "partnerFee",
+        "type": "uint256"
       }
     ],
     "stateMutability": "nonpayable",
@@ -267,6 +309,42 @@
       }
     ],
     "name": "claimDevFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "claimPartnerFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "quoteAssets",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      }
+    ],
+    "name": "claimPartnerFees",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -376,7 +454,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "placeholder1",
+        "name": "partnerProtocolShareBps",
         "type": "uint256"
       },
       {
@@ -403,6 +481,49 @@
         "internalType": "uint256",
         "name": "placeholder6",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "quoteAsset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      }
+    ],
+    "name": "partnerFeePending",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "partnerOf",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -485,6 +606,24 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      }
+    ],
+    "name": "registerPartner",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "presetId",
         "type": "uint256"
@@ -520,6 +659,11 @@
             "internalType": "bool",
             "name": "active",
             "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "partnerProtocolShareBps",
+            "type": "uint256"
           }
         ],
         "internalType": "struct IOpenFourFeeRouter.OverriddenFeeConfig",

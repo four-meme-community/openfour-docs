@@ -539,6 +539,11 @@
         "type": "bool"
       },
       {
+        "internalType": "address",
+        "name": "partner",
+        "type": "address"
+      },
+      {
         "components": [
           {
             "internalType": "string",

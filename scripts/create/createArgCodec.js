@@ -1,27 +1,31 @@
-import { AbiCoder } from 'ethers'
+import { AbiCoder, ZeroAddress } from 'ethers'
 import codecConfig from '../abi/createTokenArgsCodec.json' with { type: 'json' }
 
 const coder = AbiCoder.defaultAbiCoder()
 
-function buildCreateArgAbi(includeCustomData) {
+function buildCreateArgAbi(includeCustomData, includePartner = true) {
   const initComponents = includeCustomData
     ? [...codecConfig.initParams13, { name: 'customDataParams', type: 'bytes' }]
     : codecConfig.initParams13
+  const outerFields = includePartner
+    ? codecConfig.outerFields
+    : codecConfig.outerFields.filter((field) => field.name !== 'partner')
 
   return [
     {
       name: 'args',
       type: 'tuple',
       components: [
-        ...codecConfig.outerFields,
+        ...outerFields,
         { name: 'initParams', type: 'tuple', components: initComponents },
       ],
     },
   ]
 }
 
-const ABI_13 = buildCreateArgAbi(false)
-const ABI_14 = buildCreateArgAbi(true)
+const ABI_CURRENT = buildCreateArgAbi(true, true)
+const ABI_LEGACY_NO_PARTNER = buildCreateArgAbi(true, false)
+const ABI_LEGACY_NO_CUSTOM = buildCreateArgAbi(false, false)
 
 function toBigInt(value) {
   if (value == null) return 0n
@@ -30,7 +34,8 @@ function toBigInt(value) {
 }
 
 /**
- * Normalize backend `createArg` bytes to 14-field layout (with customDataParams).
+ * Normalize backend `createArg` bytes to the current layout
+ * (outer `partner` + initParams `customDataParams`).
  * Returns decoded struct for fee / presale calculations.
  */
 export function normalizeCreateArg(rawCreateArg) {
@@ -42,17 +47,25 @@ export function normalizeCreateArg(rawCreateArg) {
   let decoded
 
   try {
-    ;[decoded] = coder.decode(ABI_14, rawCreateArg)
-  } catch (err14) {
+    ;[decoded] = coder.decode(ABI_CURRENT, rawCreateArg)
+  } catch (errCurrent) {
     try {
-      const [d] = coder.decode(ABI_13, rawCreateArg)
-      decoded = d
-      createArg = coder.encode(ABI_14, [
-        { ...d, initParams: { ...d.initParams, customDataParams: '0x' } },
-      ])
+      const [d] = coder.decode(ABI_LEGACY_NO_PARTNER, rawCreateArg)
+      decoded = { ...d, partner: ZeroAddress }
+      createArg = coder.encode(ABI_CURRENT, [decoded])
     } catch {
-      const hint = err14 instanceof Error ? err14.message : String(err14)
-      throw new Error(`normalizeCreateArg: failed to decode createArg (${hint})`)
+      try {
+        const [d] = coder.decode(ABI_LEGACY_NO_CUSTOM, rawCreateArg)
+        decoded = {
+          ...d,
+          partner: ZeroAddress,
+          initParams: { ...d.initParams, customDataParams: '0x' },
+        }
+        createArg = coder.encode(ABI_CURRENT, [decoded])
+      } catch {
+        const hint = errCurrent instanceof Error ? errCurrent.message : String(errCurrent)
+        throw new Error(`normalizeCreateArg: failed to decode createArg (${hint})`)
+      }
     }
   }
 

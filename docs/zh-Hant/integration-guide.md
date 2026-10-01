@@ -13,7 +13,7 @@ OpenFour 的核心寫入口是 `OpenFourCore`。第三方接入通常圍繞五�
 - `OpenFourCore`：建立代幣、買入、按預算買入、賣出、遷移、讀取 token 執行期配置。
 - `OpenFourTools`：交易預估、流動性快照、建立表單 schema。
 - `OpenFourRegistry`：Preset、模組、tag 字典查詢。
-- `OpenFourFeeRouter`：費用配置、費用事件、開發者費查詢和領取。
+- `OpenFourFeeRouter`：費用配置、費用事件、開發者費查詢、partner 協議費份額領取，以及 rebate 設定。
 - `ZapRouter`：透過已配置路由在 V2/V3 相容 DEX 上提供公開報價與 swap，並支援 fee-on-transfer token 路徑。
 
 每個 OpenFour 代幣本身是一個 ERC20，同時綁定一組模組實例：
@@ -534,6 +534,8 @@ await core.createToken(createArg, signature, { value: txValue });
 
 `presaleQuote` 是含費用預算，Core 會自動反解可買數量，多餘部分退回建立者。
 
+`CreateTokenArgs` 也包含 `partner`。非零時，Core 會透過 `feeRouter.registerPartner(token, partner)` 註冊一次，使該 token 可累積 rebate 後 protocol fee 的待領取份額。無 partner 時傳 `address(0)`。分流與領取詳見 [§13](#13-費用模型)。
+
 ## 7. 提交交易
 
 Core 交易函式：
@@ -884,6 +886,7 @@ event MigrateExecuted(
 - `OpenFourCore.TokenPaused`：token 級暫停。
 - `OpenFourFeeRouter.FeeAssigned`：費用歸屬。
 - `OpenFourFeeRouter.DeveloperFeeClaimed`：開發者費領取。
+- `OpenFourFeeRouter.PartnerFeeClaimed`：partner 協議費份額領取。
 - `OpenFourFeeRouter.RebateUpdated`：protocol fee rebate 收款地址變更。
 - `OpenFourToken.MigratedPoolUpdated`：遷移 pool 標記。
 - `OpenFourRegistry.TagRegistered`：本地維護 `tagId -> tag` 字典。
@@ -1135,8 +1138,9 @@ event FeeAssigned(
 - `token`：費用來源 token，已 indexed。
 - `quoteAsset`：費用資產，已 indexed。
 - `recipient`：費用歸屬地址；未 indexed，按收款人篩選需要客戶端解碼後過濾。
-- `kind`：費用類型，已 indexed。常見類型包括 protocol、tax、developer、migrate protocol、migrate creator 等，具體枚舉以 FeeRouter 實作為準。
-- `kind == 6`：protocol fee rebate（`FEE_TYPE_REBATE`）。
+- `kind`：費用類型，已 indexed。常見類型包括 protocol、tax、developer、migrate protocol、migrate creator、rebate 和 partner，具體枚舉以 FeeRouter 實作為準。
+- `kind == 6`：protocol fee rebate（`FEE_TYPE_REBATE`）；當 `rebate()` 非零時立即轉出。
+- `kind == 7`：token partner 協議費份額（`FEE_TYPE_PARTNER`）；記為待領取（`pending == true`）。
 - `amount`：費用金額，quote wei。
 - `pending`：`true` 表示記帳為待領取餘額，`false` 表示已即時分發或轉出。
 
@@ -1162,7 +1166,27 @@ event DeveloperFeeClaimed(
 
 用於展示開發者收益領取記錄和對帳。
 
-### 10.8 MigratedPoolUpdated
+### 10.8 PartnerFeeClaimed
+
+```solidity
+event PartnerFeeClaimed(
+    address indexed quoteAsset,
+    address indexed partner,
+    uint256 amount,
+    address indexed to
+);
+```
+
+參數說明：
+
+- `quoteAsset`：領取的 quote 資產，已 indexed。
+- `partner`：領取協議費份額的 token partner，已 indexed。
+- `amount`：領取金額。
+- `to`：實際接收地址，已 indexed。
+
+用於 partner 收益領取記錄和對帳。待領取餘額也可透過 `partnerFeePending(quoteAsset, partner)` 讀取。
+
+### 10.9 MigratedPoolUpdated
 
 ```solidity
 event MigratedPoolUpdated(address indexed pool, bool enabled);
@@ -1177,7 +1201,7 @@ event MigratedPoolsUpdated(address[] pools, bool enabled);
 
 該事件由 token 合約發出。索引器可以用它作為 `MigrateExecuted.encodedMigratedData` 的補充來源，尤其適合直接按 pool 地址建反向索引。
 
-### 10.9 TokenTransferred
+### 10.10 TokenTransferred
 
 ```solidity
 event TokenTransferred(
@@ -1394,13 +1418,54 @@ feeRouter.claimDevFees(quoteAssets, to);
 
 普通交易前端不需要呼叫 claim 介面。
 
-Protocol fee rebate：
+Protocol fee rebate 與 partner 份額：
 
-- 當 `feeRouter.rebate()` 非零時，protocol fee 的 5% 會立即發送至該地址，其餘 95% 發送至 `treasury`。
-- 當 `rebate() == address(0)` 時，全部 protocol fee 都發送至 `treasury`。
-- Tax、developer 和 migration fee 不參與 rebate 分流。
+```text
+protocolFee
+  -> rebate（rebate() != 0 時為 5%；否則為 0）
+  -> 剩餘 distributable
+       -> partnerFee = distributable * partnerProtocolShareBps / 10000
+          （僅當 partnerOf(token) != 0 且 share > 0；pull/claim）
+       -> treasuryFee = distributable - partnerFee（立即轉出）
+```
+
+- 當 `feeRouter.rebate()` 非零時，protocol fee 的 5% 會立即發送至該地址。
+- 扣除 rebate 後的剩餘 protocol fee，按 `feeConfig.partnerProtocolShareBps`（或有效 preset override）計入 token partner 的待領取餘額；其餘立即發送至 `treasury`。
+- 未註冊 partner，或 `partnerProtocolShareBps == 0` 時，rebate 後的全部金額發送至 `treasury`。
+- 當 `rebate() == address(0)` 時，沒有 rebate 分流，整筆 protocol fee 作為上述 distributable。
+- Tax、developer 和 migration fee 不參與 rebate 或 partner 分流。
 - Rebate 分配會發出 `kind == 6`、`pending == false` 的 `FeeAssigned`。
-- Rebate 是 `protocolFee` 的內部分流，不是額外向使用者收費，因此 buy/sell 金額公式不變。
+- Partner 分配會發出 `kind == 7`、`pending == true` 的 `FeeAssigned`。
+- Partner 與 developer 費用不進入 `distributeFeesFromBalance`；Core 只轉入立即分發金額 `totalFee - developerFee - partnerFee`。
+- Rebate 與 partner 份額都是 `protocolFee` 的內部分流，不是額外向使用者收費，因此 buy/sell 金額公式不變。
+
+Partner 註冊與領取：
+
+- 建立時，`CreateTokenArgs.partner` 可為非零地址。Core 會呼叫一次 `feeRouter.registerPartner(token, partner)`；零地址為 no-op，重複註冊會 revert。
+- 透過 `feeRouter.partnerOf(token)` 讀取已註冊 partner。
+- Partner 領取介面：
+
+```solidity
+feeRouter.partnerFeePending(quoteAsset, partner);
+feeRouter.claimPartnerFee(quoteAsset, to);
+feeRouter.claimPartnerFees(quoteAssets, to);
+```
+
+- 簽名 payload helper 必須包含 `partner`：
+
+```solidity
+tools.getCreateTokenSigningPayload(
+  caller,
+  requestId,
+  presetId,
+  validTimestamp,
+  createFee,
+  presaleQuote,
+  antiSniperEnabled,
+  partner,
+  initParams
+);
+```
 
 ## 14. 交易接入範例
 

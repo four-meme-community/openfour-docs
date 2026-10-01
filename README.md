@@ -6,12 +6,14 @@ OpenFour is a new modular launch engine introduced by Four.Meme. It provides dev
 
 This directory contains OpenFour documentation for third-party integration, module development, and the FairLaunch sample contracts. The sample code is unaudited and provided only for demo/reference use; it must not be used for any other formal production purpose.
 
-## Update Highlights — 2026-09-03
+## Update Highlights — 2026-10-01
 
+- Documented token `partner` registration on create, FeeRouter protocol-fee partner shares, claim APIs, and `PartnerFeeClaimed` / `kind == 7` accounting.
+- Clarified rebate-then-partner-then-treasury protocol-fee split and that partner/developer fees remain pull/claim.
+- Synced public `IOpenFourFeeRouter`, `IOpenFourTools`, `CreateTokenArgs`, createArg codec, and ABIs with the partner-aware interfaces.
 - Added `TaxToken` and `StrategyTaxToken` identification, tax lifecycle, distribution, manual holder rewards, keeper operations, and gas considerations.
 - Documented Core's built-in ZapRouter flow for `BNB -> quoteAsset -> meme token`, including estimation, exact-amount buys, budget buys, refunds, and taxed-token routes.
 - Clarified that non-view `OpenFourTools` estimates and ZapRouter quotes require off-chain `staticCall`, with updated public interfaces and ABIs.
-- Added `OpenFourFeeRouter.rebate` configuration, events, calculation boundaries, and integration guidance.
 - Added Lista V2 migration, pool validation, strategy-tax routing, Lista vault staking, share claiming/redemption, and keeper workflows.
 - Expanded tag, module type, token type, migrated-pool discovery, and routing judgment rules.
 - Added unverified OpenFour Royalty template development through `ForwardVault`, including royalty splitting, `BaseTaxVault`, and schema requirements.
@@ -19,7 +21,7 @@ This directory contains OpenFour documentation for third-party integration, modu
 
 ## Documents
 
-- [Integration Guide 0.0.4](./docs/integration-guide.md): for wallets, trading UIs, indexers, data backends, launch platforms, and aggregators integrating creation, estimation, trading, event listening, token recognition, module recognition, error handling, and event interpretation.
+- [Integration Guide 0.0.5](./docs/integration-guide.md): for wallets, trading UIs, indexers, data backends, launch platforms, and aggregators integrating creation, estimation, trading, event listening, token recognition, module recognition, error handling, and event interpretation.
 - [TaxToken Tax and Distribution Mechanism](./docs/mechanisms/tax-token.md): explains bonding and migrated tax collection, four-way distribution, manual holder-reward funding, keeper workflows, and gas behavior.
 - [Lista V2 Stake-Tax Mechanism](./docs/mechanisms/lista-v2-stake.md): explains StrategyTaxToken identification, Lista V2 pool routing, tax dispatch, Lista vault share distribution, and keeper integration.
 - [Developer Guide 0.0.2](./docs/developer-guide.md): for developers building custom OpenFour modules, Presets, validators, or token extensions. It covers architecture principles, module relationships, interface requirements, schemas, validators, and the official website submission flow.

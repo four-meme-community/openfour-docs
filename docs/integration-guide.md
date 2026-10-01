@@ -13,7 +13,7 @@ The main write entry point of OpenFour is `OpenFourCore`. Third-party integratio
 - `OpenFourCore`: token creation, buy, buy by budget, sell, migration, and token runtime configuration reads.
 - `OpenFourTools`: trade estimates, liquidity snapshots, and creation form schemas.
 - `OpenFourRegistry`: Preset, module, and tag dictionary queries.
-- `OpenFourFeeRouter`: fee configuration, fee events, developer fee queries, and claims.
+- `OpenFourFeeRouter`: fee configuration, fee events, developer fee queries, partner protocol-fee share claims, and rebate settings.
 - `ZapRouter`: public configured-route quotes and swaps across V2- and V3-compatible DEX routers, including fee-on-transfer token routes.
 
 Each OpenFour token is itself an ERC20 and is also bound to a set of module instances:
@@ -534,6 +534,8 @@ If creation includes `presaleQuote`:
 
 `presaleQuote` is a fee-inclusive budget. Core automatically reverse-solves the purchasable amount and refunds any excess to the creator.
 
+`CreateTokenArgs` also includes `partner`. When nonzero, Core registers that address once via `feeRouter.registerPartner(token, partner)` so the token can accrue a claimable share of post-rebate protocol fees. Pass `address(0)` when no partner is used. See [§13](#13-fee-model) for the rebate/partner split and claim APIs.
+
 ## 7. Submitting Trades
 
 Core trading functions:
@@ -884,6 +886,7 @@ Events most commonly used by indexers and frontends:
 - `OpenFourCore.TokenPaused`: token-level pause.
 - `OpenFourFeeRouter.FeeAssigned`: fee ownership.
 - `OpenFourFeeRouter.DeveloperFeeClaimed`: developer fee claims.
+- `OpenFourFeeRouter.PartnerFeeClaimed`: partner protocol-fee share claims.
 - `OpenFourFeeRouter.RebateUpdated`: protocol-fee rebate recipient changes.
 - `OpenFourToken.MigratedPoolUpdated`: migrated pool markers.
 - `OpenFourRegistry.TagRegistered`: maintain a local `tagId -> tag` dictionary.
@@ -1135,8 +1138,9 @@ Parameter descriptions:
 - `token`: source token of the fee; indexed.
 - `quoteAsset`: fee asset; indexed.
 - `recipient`: fee recipient address; not indexed. Filtering by recipient requires client-side decoding and filtering.
-- `kind`: fee type; indexed. Common types include protocol, tax, developer, migrate protocol, migrate creator, and similar categories. Use the FeeRouter implementation as the source of truth for the exact enum.
-- `kind == 6`: protocol-fee rebate (`FEE_TYPE_REBATE`).
+- `kind`: fee type; indexed. Common types include protocol, tax, developer, migrate protocol, migrate creator, rebate, and partner. Use the FeeRouter implementation as the source of truth for the exact enum.
+- `kind == 6`: protocol-fee rebate (`FEE_TYPE_REBATE`); immediately transferred when `rebate()` is nonzero.
+- `kind == 7`: token partner protocol-fee share (`FEE_TYPE_PARTNER`); recorded as claimable (`pending == true`).
 - `amount`: fee amount, in quote wei.
 - `pending`: `true` means recorded as claimable pending balance, `false` means immediately distributed or transferred out.
 
@@ -1162,7 +1166,27 @@ Parameter descriptions:
 
 Use this to display developer revenue claim records and for reconciliation.
 
-### 10.8 MigratedPoolUpdated
+### 10.8 PartnerFeeClaimed
+
+```solidity
+event PartnerFeeClaimed(
+    address indexed quoteAsset,
+    address indexed partner,
+    uint256 amount,
+    address indexed to
+);
+```
+
+Parameter descriptions:
+
+- `quoteAsset`: quote asset claimed; indexed.
+- `partner`: token partner claiming the protocol-fee share; indexed.
+- `amount`: claimed amount.
+- `to`: actual receiving address; indexed.
+
+Use this for partner revenue claim records and reconciliation. Pending balances are also readable with `partnerFeePending(quoteAsset, partner)`.
+
+### 10.9 MigratedPoolUpdated
 
 ```solidity
 event MigratedPoolUpdated(address indexed pool, bool enabled);
@@ -1177,7 +1201,7 @@ Parameter descriptions:
 
 This event is emitted by the token contract. Indexers can use it as a supplemental source for `MigrateExecuted.encodedMigratedData`, especially when building reverse indexes by pool address.
 
-### 10.9 TokenTransferred
+### 10.10 TokenTransferred
 
 ```solidity
 event TokenTransferred(
@@ -1394,13 +1418,54 @@ feeRouter.claimDevFees(quoteAssets, to);
 
 Regular trading frontends do not need to call claim APIs.
 
-Protocol-fee rebate:
+Protocol-fee rebate and partner share:
 
-- When `feeRouter.rebate()` is nonzero, 5% of the protocol fee is sent immediately to that address; the remaining 95% goes to `treasury`.
-- When `rebate() == address(0)`, the full protocol fee goes to `treasury`.
-- Tax, developer, and migration fees are not included in the rebate split.
+```text
+protocolFee
+  -> rebate (5% when rebate() != 0; otherwise 0)
+  -> remaining distributable
+       -> partnerFee = distributable * partnerProtocolShareBps / 10000
+          (only when partnerOf(token) != 0 and share > 0; pull/claim)
+       -> treasuryFee = distributable - partnerFee (immediate)
+```
+
+- When `feeRouter.rebate()` is nonzero, 5% of the protocol fee is sent immediately to that address.
+- Of the remaining post-rebate protocol fee, `feeConfig.partnerProtocolShareBps` (or the active preset override) credits the token partner as a claimable balance. The rest goes to `treasury` immediately.
+- When no partner is registered or `partnerProtocolShareBps == 0`, the full post-rebate amount goes to `treasury`.
+- When `rebate() == address(0)`, there is no rebate leg and the full protocol fee is the distributable amount above.
+- Tax, developer, and migration fees are not included in the rebate or partner split.
 - Rebate assignments emit `FeeAssigned` with `kind == 6` and `pending == false`.
-- The rebate is a split of `protocolFee`, not an additional user fee, so the buy/sell amount formulas do not change.
+- Partner assignments emit `FeeAssigned` with `kind == 7` and `pending == true`.
+- Partner and developer fees are excluded from `distributeFeesFromBalance`; Core transfers only the immediate amount `totalFee - developerFee - partnerFee`.
+- The rebate and partner share are splits of `protocolFee`, not additional user fees, so buy/sell amount formulas do not change.
+
+Partner registration and claims:
+
+- At create time, `CreateTokenArgs.partner` may be a nonzero address. Core calls `feeRouter.registerPartner(token, partner)` once; zero is a no-op and a second registration reverts.
+- Read the registered partner with `feeRouter.partnerOf(token)`.
+- Partners claim with:
+
+```solidity
+feeRouter.partnerFeePending(quoteAsset, partner);
+feeRouter.claimPartnerFee(quoteAsset, to);
+feeRouter.claimPartnerFees(quoteAssets, to);
+```
+
+- Signing payload helpers must include `partner`:
+
+```solidity
+tools.getCreateTokenSigningPayload(
+  caller,
+  requestId,
+  presetId,
+  validTimestamp,
+  createFee,
+  presaleQuote,
+  antiSniperEnabled,
+  partner,
+  initParams
+);
+```
 
 ## 14. Trading Integration Example
 

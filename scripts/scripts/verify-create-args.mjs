@@ -70,7 +70,7 @@ function encodeSyntheticCreateArgs({
 }) {
   const coder = AbiCoder.defaultAbiCoder()
   const type =
-    'tuple(uint256 requestId,uint256 presetId,uint256 validTimestamp,uint256 createFee,uint256 presaleQuote,bool antiSniperEnabled,tuple(string name,string symbol,string tokenUri,uint256 maxSupply,uint256 saleAmount,uint256 raiseAmount,address quoteAsset,bytes32 tokenSalt,bytes tokenParams,bytes vaultParams,bytes curveParams,bytes tradeParams,bytes migrateParams,bytes customDataParams) initParams)'
+    'tuple(uint256 requestId,uint256 presetId,uint256 validTimestamp,uint256 createFee,uint256 presaleQuote,bool antiSniperEnabled,address partner,tuple(string name,string symbol,string tokenUri,uint256 maxSupply,uint256 saleAmount,uint256 raiseAmount,address quoteAsset,bytes32 tokenSalt,bytes tokenParams,bytes vaultParams,bytes curveParams,bytes tradeParams,bytes migrateParams,bytes customDataParams) initParams)'
   return coder.encode([type], [
     [
       requestId,
@@ -79,6 +79,7 @@ function encodeSyntheticCreateArgs({
       createFee,
       presaleQuote,
       antiSniperEnabled,
+      '0x0000000000000000000000000000000000000000',
       [
         initParams.name,
         initParams.symbol,
