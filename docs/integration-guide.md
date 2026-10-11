@@ -34,9 +34,15 @@ Integrations should distinguish between two identity layers:
 
 Use `OpenFourRegistry` as the recommended network-level entry address. Third parties only need to configure the Registry address for each chain, then read the current Core and Tools addresses from the Registry on-chain; read FeeRouter and wrapped native from Core.
 
-Known Registry addresses:
+Deployed Registry addresses:
 
 - BNB Smart Chain mainnet: `0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+- Robinhood Chain mainnet: `0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+
+Deployed Core addresses:
+
+- BNB Smart Chain mainnet: `0xebe7b6C1089D9F72aD07f34E36d898e44E5e27f3`
+- Robinhood Chain mainnet: `0xebe7b6C1089D9F72aD07f34E36d898e44E5e27f3`
 
 ```typescript
 const registry = new Contract(registryAddress, OpenFourRegistryAbi, provider);

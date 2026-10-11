@@ -34,9 +34,15 @@ OpenFour 的核心寫入口是 `OpenFourCore`。第三方接入通常圍繞五�
 
 推薦把 `OpenFourRegistry` 作為網路級入口地址。第三方只需要為每條鏈配置 Registry 地址，然後從 Registry 鏈上讀取目前 Core 和 Tools 地址；再從 Core 讀取 FeeRouter 和 wrapped native。
 
-已知 Registry 地址：
+已部署 Registry 地址：
 
 - BNB Smart Chain mainnet：`0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+- Robinhood Chain mainnet：`0x912CEf0C3aE9Ab6eB3Ec87cab69371cFb317Ab94`
+
+已部署 Core 地址：
+
+- BNB Smart Chain mainnet：`0xebe7b6C1089D9F72aD07f34E36d898e44E5e27f3`
+- Robinhood Chain mainnet：`0xebe7b6C1089D9F72aD07f34E36d898e44E5e27f3`
 
 ```typescript
 const registry = new Contract(registryAddress, OpenFourRegistryAbi, provider);
