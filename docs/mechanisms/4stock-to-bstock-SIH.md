@@ -13,6 +13,7 @@ With this path enabled, a graduating meme’s primary market is first meme / 4St
 1. Each meme has **one** routable SIH pool at a time: `activePool[meme]`.
 2. **Listen primarily to** `Stock4SihManager.MemePoolCreated`: it gives meme, **quote**, and `poolId` to set / flip `activePool`.
 3. A 4Stock → bStock cutover does **not** emit another OpenFour `MigrateExecuted`; keep listening to `MemePoolCreated`.
+4. If you integrate the **PancakeSwap Aggregator**, it can discover and aggregate V4 SIH hook liquidity for you. When the trade is not against the meme’s quote (e.g. buy with BNB / sell to BNB), you can hand the path off to the Aggregator for automatic routing instead of building multi-hops yourself.
 
 Indexer state example:
 

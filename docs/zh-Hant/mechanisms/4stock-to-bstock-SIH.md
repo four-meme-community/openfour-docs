@@ -13,6 +13,7 @@
 1. 每個 meme **任一時刻只有一個**可交易 SIH 池：`activePool[meme]`。
 2. **核心只聽** `Stock4SihManager.MemePoolCreated`：它同時給出 meme、**quote**、`poolId`，用來寫 / 切 `activePool`。
 3. 4Stock → bStock cutover **不會**再發 OpenFour `MigrateExecuted`；繼續聽 `MemePoolCreated` 即可。
+4. 若已接入 **PancakeSwap Aggregator**，可由其自動查詢並聚合 V4 SIH hook 流動性。交易不以 quote 為對手幣時（例如 buy with BNB / sell to BNB），可直接交給 Aggregator 自動路由，無需自行拼多跳。
 
 索引狀態示例：
 
