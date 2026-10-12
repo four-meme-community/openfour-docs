@@ -871,8 +871,11 @@ Decoding rules are determined by `migrateTagId` and `migratedDataVersion`:
 
 - `module.migrate.pcs_v2`: `encodedMigratedData = abi.encode(address pair)`.
 - `module.migrate.bonding_lista_v2`, version `1`: `encodedMigratedData = abi.encode(address pair)`. The pair is the Lista V2 `token/quoteAsset` launch pair.
+- `module.migrate.pcs_v4_sih`: `encodedMigratedData = abi.encode(bytes32 poolId)`. The pool is a PancakeSwap Infinity CL pool bound to the 4Stock Shared Inventory Hook (SIH).
 - Likwid V2 types: usually `abi.encode(bytes32 poolId)`.
-- PancakeSwap V4 types: usually `abi.encode(bytes32 poolId)`.
+- Other PancakeSwap V4 types: usually `abi.encode(bytes32 poolId)`.
+
+`module.migrate.pcs_v4_sih` graduates 4Stock-quoted tokens into a shared SIH inventory pool instead of a standalone V2/V4 LP. Later 4Stock → bStock quote cutover keeps one active pool per meme; aggregators must switch liquidity queries from events. See [4Stock → bStock](./mechanisms/4stock-to-bstock-SIH.md).
 
 Do not treat `token.migratedPools(pool) == true` as proof that the pool is already active. Pool addresses are pre-registered to block external pool transfers during the internal-market phase. Confirm an active Lista V2 route with all of the following:
 
@@ -880,6 +883,13 @@ Do not treat `token.migratedPools(pool) == true` as proof that the pool is alrea
 - `MigrateExecuted.migrateTagId` matches `module.migrate.bonding_lista_v2`.
 - `migratedDataVersion == 1`.
 - The decoded pair matches the factory's `getPair(token, quoteAsset)`.
+
+Confirm an active SIH route with:
+
+- `vault.phase() == Migrated`.
+- `MigrateExecuted.migrateTagId` matches `module.migrate.pcs_v4_sih` (`0x4d9a569156253e90`).
+- The decoded `poolId` matches the SIH `MemePoolCreated` / PCS `Initialize` pool id for that meme.
+- The live external **quote** is `MemePoolCreated.quote` (not present in `MigrateExecuted`; do not use `vault.quoteAsset()` alone).
 
 ## 10. Event Monitoring
 
@@ -1317,6 +1327,7 @@ Migrate module tags:
 - `module.migrate.pcs_v2`: PancakeSwap V2 migration.
 - `module.migrate.pcs_v4`: PancakeSwap V4 migration.
 - `module.migrate.bonding_pcs_v4`: bonding migration to PancakeSwap V4.
+- `module.migrate.pcs_v4_sih`: bonding migration to a PancakeSwap Infinity SIH pool for 4Stock-quoted tokens; supports later 4Stock → bStock quote cutover.
 - `module.migrate.bonding_likwid`: bonding migration to Likwid V2.
 - `module.migrate.bonding_lista_v2`: bonding migration to a Lista V2 pair.
 

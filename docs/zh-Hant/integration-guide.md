@@ -871,8 +871,11 @@ event MigrateExecuted(
 
 - `module.migrate.pcs_v2`：`encodedMigratedData = abi.encode(address pair)`。
 - `module.migrate.bonding_lista_v2`，version `1`：`encodedMigratedData = abi.encode(address pair)`；該 pair 是 Lista V2 的 `token/quoteAsset` launch pair。
+- `module.migrate.pcs_v4_sih`：`encodedMigratedData = abi.encode(bytes32 poolId)`；該池是綁定 4Stock Shared Inventory Hook（SIH）的 PancakeSwap Infinity CL 池。
 - Likwid V2 類型：通常為 `abi.encode(bytes32 poolId)`。
-- PancakeSwap V4 類型：通常為 `abi.encode(bytes32 poolId)`。
+- 其他 PancakeSwap V4 類型：通常為 `abi.encode(bytes32 poolId)`。
+
+`module.migrate.pcs_v4_sih` 會把 4Stock 計價 token 畢業到共享 SIH 庫存池，而不是獨立的 V2/V4 LP。後續 4Stock → bStock quote cutover 仍保持每個 meme 只有一個可交易池；聚合器必須依事件切換流動性查詢。詳見 [4Stock → bStock](./mechanisms/4stock-to-bstock-SIH.md)。
 
 不要把 `token.migratedPools(pool) == true` 單獨視為 pool 已啟用的證明。pool 地址會被預先註冊，用於在內盤階段阻止外部 pool 轉帳。確認 Lista V2 外盤路由已啟用時，應同時滿足：
 
@@ -880,6 +883,13 @@ event MigrateExecuted(
 - `MigrateExecuted.migrateTagId` 匹配 `module.migrate.bonding_lista_v2`。
 - `migratedDataVersion == 1`。
 - 解碼出的 pair 與 factory 的 `getPair(token, quoteAsset)` 一致。
+
+確認 SIH 外盤路由已啟用時，應同時滿足：
+
+- `vault.phase() == Migrated`。
+- `MigrateExecuted.migrateTagId` 匹配 `module.migrate.pcs_v4_sih`（`0x4d9a569156253e90`）。
+- 解碼出的 `poolId` 與該 meme 的 SIH `MemePoolCreated` / PCS `Initialize` pool id 一致。
+- 外盤 **quote** 取自 `MemePoolCreated.quote`（`MigrateExecuted` 裡沒有；不要單獨用 `vault.quoteAsset()`）。
 
 ## 10. 事件監聽
 
@@ -1317,6 +1327,7 @@ Migrate module tags：
 - `module.migrate.pcs_v2`：PancakeSwap V2 遷移。
 - `module.migrate.pcs_v4`：PancakeSwap V4 遷移。
 - `module.migrate.bonding_pcs_v4`：bonding 遷移到 PancakeSwap V4。
+- `module.migrate.pcs_v4_sih`：4Stock 計價 token bonding 遷移到 PancakeSwap Infinity SIH 池；支援後續 4Stock → bStock quote cutover。
 - `module.migrate.bonding_likwid`：bonding 遷移到 Likwid V2。
 - `module.migrate.bonding_lista_v2`：bonding 遷移到 Lista V2 pair。
 
