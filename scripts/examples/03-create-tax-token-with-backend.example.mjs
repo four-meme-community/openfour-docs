@@ -5,7 +5,8 @@
  * Env:
  *   PRIVATE_KEY, REGISTRY_ADDRESS, OPEN_FOUR_CORE, PRESET_ID, WRAPPED_NATIVE
  *   IMAGE_PATH (or IMAGE_URL), TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DESC
- *   Optional: FOUR_MEME_API_BASE, RPC_URL, QUOTE_SYMBOL
+ *   Optional: FOUR_MEME_API_BASE, FOUR_MEME_NETWORK_CODE (0=BSC, 8=Robinhood),
+ *   RPC_URL, QUOTE_SYMBOL
  *   Optional TaxVault: TAX_VAULT_TYPE_ID, TAX_VAULT_INIT_PARAMS_HEX,
  *   TAX_VAULT_INIT_PARAMS_JSON
  */
@@ -63,6 +64,8 @@ async function main() {
   const signer = new Wallet(PRIVATE_KEY, provider)
   const api = createFourMemeApiClient({
     apiBase: process.env.FOUR_MEME_API_BASE,
+    // Request network type (NOT chainId): 0=BSC, 8=Robinhood
+    networkCode: process.env.FOUR_MEME_NETWORK_CODE ?? 0,
   })
   const { accessToken, address } = await api.loginWithSigner({ signer })
   const templateConfig = await api.getTokenTemplateConfig({

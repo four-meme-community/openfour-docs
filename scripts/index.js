@@ -22,12 +22,15 @@ export { createTaxTokenWithBackendAndChain } from './create/createTaxTokenFlow.j
 export {
   DEFAULT_FOUR_MEME_API_BASE,
   DEFAULT_FOUR_MEME_NETWORK_CODE,
+  FOUR_MEME_NETWORK_CODE,
   FOUR_MEME_TEMPLATE_CONFIG_PATH,
   FOUR_MEME_TEMPLATE_CREATE_TOKEN_PATH,
   FOUR_MEME_TEMPLATE_SEARCH_PATH,
   FOUR_MEME_TOKEN_UPLOAD_PATH,
+  MEME_NETWORK_HEADER,
   createFourMemeApiClient,
   normalizeFourMemeCreateResponse,
+  normalizeFourMemeNetworkCode,
   selectFourMemeTemplateConfig,
 } from './api/fourMemeClient.js'
 export {

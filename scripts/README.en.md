@@ -187,7 +187,7 @@ import {
   createTaxTokenWithBackendAndChain,
 } from './index.js'
 
-const api = createFourMemeApiClient()
+const api = createFourMemeApiClient({ networkCode: 0 }) // 0=BSC, 8=Robinhood
 const { accessToken } = await api.loginWithSigner({ signer })
 const imgUrl = await api.uploadTokenImage({ accessToken, file, filename })
 await createTaxTokenWithBackendAndChain({
@@ -204,6 +204,41 @@ await createTokenWithBackendAndChain({ buildPayload: payload, postCreate, signer
 ```
 
 `createFourMemeApiClient` uses `/private/token_template/token/create`, matching this OpenFour integration guide.
+
+#### B3.1) Four.meme `networkCode` and multi-chain switching
+
+Request `networkCode` is a **network type integer**, not an EVM `chainId` (do not send `56` / `4663`).
+
+| Network | Request value |
+| --- | --- |
+| BSC | `0` |
+| Robinhood | `8` |
+
+- **Header** `meme-network-code`: send `0` or `8` (ranking / search / most private routes take network from the header; omitted → backend default `0`).
+- **Query / body** `networkCode`: wherever an endpoint documents this field (nonce, login, config, address, fill, token get, …), send integer `0` / `8`.
+- **Responses** may still return a string name (e.g. `"BSC"`) or a separate `network` int; that is response-only — **requests should always use `0` / `8`**.
+- Legacy clients sending `"BSC"` / `"ROBINHOOD"` still work via server dual-read; SDK / new integrations should use numbers.
+
+Script constants and switching:
+
+```js
+import {
+  FOUR_MEME_NETWORK_CODE, // { BSC: 0, ROBINHOOD: 8 }
+  createFourMemeApiClient,
+} from './index.js'
+
+// Set network at construction (default 0 = BSC)
+const api = createFourMemeApiClient({
+  networkCode: FOUR_MEME_NETWORK_CODE.BSC,
+})
+
+// Switch to Robinhood: subsequent requests use header + login body `8`
+api.setNetworkCode(FOUR_MEME_NETWORK_CODE.ROBINHOOD)
+// Or override per call:
+await api.loginWithSigner({ signer, networkCode: 8 })
+```
+
+Env example: `FOUR_MEME_NETWORK_CODE=0` or `8` (see `examples/03-…`).
 
 ### C. Internal-market trading
 
@@ -303,7 +338,9 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 | `prepareCreateTokenOnChain` | Normalize createArg; compute txValue (aligned with contract) |
 | `isPresaleNative` / `computeCreateTokenTxValue` | Presale native vs ERC20 payment helpers |
 | `submitCreateTokenOnChain` | Call OpenFourCore.createToken |
-| `createFourMemeApiClient` | Four.meme nonce/login, image upload, and normalized create API client |
+| `createFourMemeApiClient` | Four.meme nonce/login, image upload, and normalized create API client; supports `networkCode` / `setNetworkCode` |
+| `FOUR_MEME_NETWORK_CODE` / `DEFAULT_FOUR_MEME_NETWORK_CODE` / `normalizeFourMemeNetworkCode` | Request network type: `0`=BSC, `8`=Robinhood (not chainId) |
+| `MEME_NETWORK_HEADER` | Header name `meme-network-code` |
 | `normalizeFourMemeCreateResponse` | Convert Four.meme `data[]` / string code response into the generic create response shape |
 | `createTokenWithBackendAndChain` | Generic: POST body + on-chain |
 | `createTaxTokenWithBackendAndChain` | Helper: buildCreateTaxTokenRequest + POST + on-chain |

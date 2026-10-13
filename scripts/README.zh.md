@@ -187,7 +187,7 @@ import {
   createTaxTokenWithBackendAndChain,
 } from './index.js'
 
-const api = createFourMemeApiClient()
+const api = createFourMemeApiClient({ networkCode: 0 }) // 0=BSC, 8=Robinhood
 const { accessToken } = await api.loginWithSigner({ signer })
 const imgUrl = await api.uploadTokenImage({ accessToken, file, filename })
 await createTaxTokenWithBackendAndChain({
@@ -204,6 +204,41 @@ await createTokenWithBackendAndChain({ buildPayload: payload, postCreate, signer
 ```
 
 `createFourMemeApiClient` 使用 `/private/token_template/token/create`，與本 OpenFour 接入文檔一致。
+
+#### B3.1) Four.meme `networkCode` 與多鏈切換
+
+請求裡的 `networkCode` 是 **網路類型整數**，不是 EVM `chainId`（不要傳 `56` / `4663`）。
+
+| 網路 | 請求值 |
+| --- | --- |
+| BSC | `0` |
+| Robinhood | `8` |
+
+- **Header** `meme-network-code`：傳 `0` 或 `8`（ranking / search / 多數 private 路由從 header 取網路；省略時後端預設 `0`）。
+- **Query / body** `networkCode`：凡文件標了該欄位的介面（nonce、login、config、address、fill、token get 等）同樣傳整數 `0` / `8`。
+- **回應** 裡偶發仍是字串名（如 `"BSC"`）或另有 `network` 整數欄；那是回應格式，**請求應一律用 `0` / `8`**。
+- 舊客戶端若仍傳 `"BSC"` / `"ROBINHOOD"`，後端雙讀仍可相容；SDK / 新接入請用數字。
+
+本腳本常數與切鏈：
+
+```js
+import {
+  FOUR_MEME_NETWORK_CODE, // { BSC: 0, ROBINHOOD: 8 }
+  createFourMemeApiClient,
+} from './index.js'
+
+// 建立時指定網路（預設 0 = BSC）
+const api = createFourMemeApiClient({
+  networkCode: FOUR_MEME_NETWORK_CODE.BSC,
+})
+
+// 切到 Robinhood：之後所有請求 header + login body 都走 8
+api.setNetworkCode(FOUR_MEME_NETWORK_CODE.ROBINHOOD)
+// 或單次覆蓋：
+await api.loginWithSigner({ signer, networkCode: 8 })
+```
+
+環境變數示例：`FOUR_MEME_NETWORK_CODE=0` 或 `8`（見 `examples/03-…`）。
 
 ### C. 內盤交易
 
@@ -303,7 +338,9 @@ REGISTRY_ADDRESS=0xYourRegistry RPC_URL=https://bsc-testnet.publicnode.com \
 | `prepareCreateTokenOnChain` | 規範化 createArg，計算 txValue（與合約一致） |
 | `isPresaleNative` / `computeCreateTokenTxValue` | 預購原生 / ERC20 付款判斷 |
 | `submitCreateTokenOnChain` | 呼叫 OpenFourCore.createToken |
-| `createFourMemeApiClient` | Four.meme nonce/login、圖片上傳與標準化 create API client |
+| `createFourMemeApiClient` | Four.meme nonce/login、圖片上傳與標準化 create API client；支援 `networkCode` / `setNetworkCode` 切鏈 |
+| `FOUR_MEME_NETWORK_CODE` / `DEFAULT_FOUR_MEME_NETWORK_CODE` / `normalizeFourMemeNetworkCode` | 請求網路類型：`0`=BSC、`8`=Robinhood（非 chainId） |
+| `MEME_NETWORK_HEADER` | Header 名 `meme-network-code` |
 | `normalizeFourMemeCreateResponse` | 將 Four.meme `data[]` / string code 回應轉成通用 create response |
 | `createTokenWithBackendAndChain` | 通用：POST body + 上鏈 |
 | `createTaxTokenWithBackendAndChain` | 稅費：buildCreateTaxTokenRequest + POST + 上鏈 |

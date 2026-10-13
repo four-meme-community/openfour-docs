@@ -5,7 +5,8 @@
  * Prerequisites:
  *   - ethers ^6.x
  *   - Set REGISTRY_ADDRESS, PRESET_ID, TOOLS_ADDRESS (or use loadPresetSchemas)
- *   - Optional: FOUR_MEME_API_BASE, QUOTE_SYMBOL (for example BNB)
+ *   - Optional: FOUR_MEME_API_BASE, FOUR_MEME_NETWORK_CODE (0=BSC, 8=Robinhood),
+ *     QUOTE_SYMBOL (for example BNB)
  */
 import { JsonRpcProvider } from 'ethers'
 import { createFourMemeApiClient } from '../api/fourMemeClient.js'
@@ -21,6 +22,8 @@ async function main() {
   const provider = new JsonRpcProvider(RPC_URL)
   const api = createFourMemeApiClient({
     apiBase: process.env.FOUR_MEME_API_BASE,
+    // Request network type (NOT chainId): 0=BSC, 8=Robinhood
+    networkCode: process.env.FOUR_MEME_NETWORK_CODE ?? 0,
   })
 
   // GET /public/token_template/config?templateId=...

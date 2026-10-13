@@ -1,12 +1,66 @@
 import { assertBackendCreateData } from '../create/createResponse.js'
 
 export const DEFAULT_FOUR_MEME_API_BASE = 'https://four.meme/meme-api/v1'
-export const DEFAULT_FOUR_MEME_NETWORK_CODE = 'BSC'
+
+/**
+ * Four.meme / OpenFour **request** network types.
+ * These are NOT EVM chain IDs (`56`, `4663`, …).
+ *
+ * | Network   | Request value |
+ * |-----------|---------------|
+ * | BSC       | `0`           |
+ * | Robinhood | `8`           |
+ */
+export const FOUR_MEME_NETWORK_CODE = Object.freeze({
+  BSC: 0,
+  ROBINHOOD: 8,
+})
+
+/** Default request network: BSC (`0`). */
+export const DEFAULT_FOUR_MEME_NETWORK_CODE = FOUR_MEME_NETWORK_CODE.BSC
+
+/** HTTP header for ranking / search / most private routes. */
+export const MEME_NETWORK_HEADER = 'meme-network-code'
+
 export const FOUR_MEME_TEMPLATE_CREATE_TOKEN_PATH =
   '/private/token_template/token/create'
 export const FOUR_MEME_TEMPLATE_SEARCH_PATH = '/public/token_template/search'
 export const FOUR_MEME_TEMPLATE_CONFIG_PATH = '/public/token_template/config'
 export const FOUR_MEME_TOKEN_UPLOAD_PATH = '/private/token/upload'
+
+/**
+ * Normalize a request `networkCode` to integer `0` or `8`.
+ * Accepts numbers, numeric strings, and legacy names `BSC` / `ROBINHOOD`
+ * (server dual-read still accepts names; new callers should send `0` / `8`).
+ *
+ * @param {string | number | null | undefined} value
+ * @returns {number}
+ */
+export function normalizeFourMemeNetworkCode(
+  value = DEFAULT_FOUR_MEME_NETWORK_CODE,
+) {
+  if (value == null || value === '') {
+    return DEFAULT_FOUR_MEME_NETWORK_CODE
+  }
+  if (
+    typeof value === 'number' ||
+    (typeof value === 'string' && /^\d+$/.test(String(value).trim()))
+  ) {
+    const n = Number(value)
+    if (n === FOUR_MEME_NETWORK_CODE.BSC || n === FOUR_MEME_NETWORK_CODE.ROBINHOOD) {
+      return n
+    }
+    throw new Error(
+      `Unknown Four.meme networkCode type: ${n} (use 0=BSC, 8=ROBINHOOD; not EVM chainId)`,
+    )
+  }
+  const name = String(value).trim().toUpperCase()
+  if (name === 'BSC') return FOUR_MEME_NETWORK_CODE.BSC
+  if (name === 'ROBINHOOD') return FOUR_MEME_NETWORK_CODE.ROBINHOOD
+  throw new Error(
+    `Unknown Four.meme networkCode: ${value} (use 0/8 or BSC/ROBINHOOD)`,
+  )
+}
 
 function getFetch(fetchFn) {
   const resolved = fetchFn ?? globalThis.fetch
@@ -37,6 +91,14 @@ function assertFourMemeResponse(response, label = 'Four.meme API') {
   return response
 }
 
+function withNetworkHeaders(headers, networkCode) {
+  const code = normalizeFourMemeNetworkCode(networkCode)
+  return {
+    ...headers,
+    [MEME_NETWORK_HEADER]: String(code),
+  }
+}
+
 async function requestFourMemeJson({
   apiBase = DEFAULT_FOUR_MEME_API_BASE,
   path,
@@ -44,13 +106,17 @@ async function requestFourMemeJson({
   headers = {},
   accessToken,
   body,
+  networkCode = DEFAULT_FOUR_MEME_NETWORK_CODE,
   fetchFn,
 }) {
   const fetchImpl = getFetch(fetchFn)
-  const finalHeaders = {
-    ...headers,
-    ...(accessToken ? { 'meme-web-access': accessToken } : {}),
-  }
+  const finalHeaders = withNetworkHeaders(
+    {
+      ...headers,
+      ...(accessToken ? { 'meme-web-access': accessToken } : {}),
+    },
+    networkCode,
+  )
 
   let finalBody = body
   if (
@@ -87,14 +153,16 @@ async function requestFourMemeLoginNonce({
     throw new Error('requestFourMemeLoginNonce: accountAddress is required')
   }
 
+  const code = normalizeFourMemeNetworkCode(networkCode)
   const response = await requestFourMemeJson({
     apiBase,
     path: '/private/user/nonce/generate',
     method: 'POST',
+    networkCode: code,
     body: {
       accountAddress,
       verifyType,
-      networkCode,
+      networkCode: code,
     },
     fetchFn,
   })
@@ -120,10 +188,12 @@ async function loginFourMemeWithSignature({
     throw new Error('loginFourMemeWithSignature: signature is required')
   }
 
+  const code = normalizeFourMemeNetworkCode(networkCode)
   const response = await requestFourMemeJson({
     apiBase,
     path: '/private/user/login/dex',
     method: 'POST',
+    networkCode: code,
     body: {
       region,
       langType,
@@ -131,7 +201,7 @@ async function loginFourMemeWithSignature({
       inviteCode,
       verifyInfo: {
         address,
-        networkCode,
+        networkCode: code,
         signature,
         verifyType,
       },
@@ -154,11 +224,12 @@ async function loginFourMemeWithSigner({
 } = {}) {
   if (!signer) throw new Error('loginFourMemeWithSigner: signer is required')
 
+  const code = normalizeFourMemeNetworkCode(networkCode)
   const address = accountAddress ?? (await signer.getAddress())
   const nonce = await requestFourMemeLoginNonce({
     apiBase,
     accountAddress: address,
-    networkCode,
+    networkCode: code,
     verifyType,
     fetchFn,
   })
@@ -168,13 +239,13 @@ async function loginFourMemeWithSigner({
     apiBase,
     address,
     signature,
-    networkCode,
+    networkCode: code,
     verifyType,
     fetchFn,
     ...loginOptions,
   })
 
-  return { accessToken, address, nonce, message, signature }
+  return { accessToken, address, nonce, message, signature, networkCode: code }
 }
 
 function toUploadBlob(file, contentType) {
@@ -202,6 +273,7 @@ async function uploadFourMemeTokenImage({
   filename,
   contentType,
   fieldName = 'file',
+  networkCode = DEFAULT_FOUR_MEME_NETWORK_CODE,
   fetchFn,
 } = {}) {
   if (!accessToken) {
@@ -217,7 +289,10 @@ async function uploadFourMemeTokenImage({
 
   const res = await fetchImpl(joinApiUrl(apiBase, FOUR_MEME_TOKEN_UPLOAD_PATH), {
     method: 'POST',
-    headers: { 'meme-web-access': accessToken },
+    headers: withNetworkHeaders(
+      { 'meme-web-access': accessToken },
+      networkCode,
+    ),
     body: form,
   })
   if (!res.ok) {
@@ -258,15 +333,37 @@ export function selectFourMemeTemplateConfig(configs, { symbol } = {}) {
   )
 }
 
+/**
+ * Four.meme Web API client.
+ *
+ * Multi-chain: pass `networkCode` `0` (BSC) or `8` (Robinhood). The client
+ * sends header `meme-network-code` on every request and the same integer in
+ * login / nonce body fields. Call `setNetworkCode` (or pass overrides) to switch.
+ *
+ * @param {object} [options]
+ * @param {string} [options.apiBase]
+ * @param {string} [options.accessToken]
+ * @param {string | number} [options.networkCode=0] - request network (`0`/`8`)
+ * @param {typeof fetch} [options.fetchFn]
+ */
 export function createFourMemeApiClient({
   apiBase = DEFAULT_FOUR_MEME_API_BASE,
   accessToken = '',
+  networkCode = DEFAULT_FOUR_MEME_NETWORK_CODE,
   fetchFn,
 } = {}) {
   let currentAccessToken = accessToken
+  let currentNetworkCode = normalizeFourMemeNetworkCode(networkCode)
 
   const client = {
     apiBase,
+    getNetworkCode() {
+      return currentNetworkCode
+    },
+    setNetworkCode(nextNetworkCode) {
+      currentNetworkCode = normalizeFourMemeNetworkCode(nextNetworkCode)
+      return client
+    },
     setAccessToken(nextAccessToken) {
       currentAccessToken = nextAccessToken
       return client
@@ -276,8 +373,12 @@ export function createFourMemeApiClient({
         apiBase,
         fetchFn,
         ...options,
+        networkCode: options.networkCode ?? currentNetworkCode,
       })
       currentAccessToken = login.accessToken
+      if (login.networkCode != null) {
+        currentNetworkCode = login.networkCode
+      }
       return login
     },
     async uploadTokenImage(options = {}) {
@@ -285,6 +386,7 @@ export function createFourMemeApiClient({
         apiBase,
         fetchFn,
         ...options,
+        networkCode: options.networkCode ?? currentNetworkCode,
         accessToken: options.accessToken ?? currentAccessToken,
       })
     },
@@ -292,6 +394,7 @@ export function createFourMemeApiClient({
       const response = await requestFourMemeJson({
         apiBase,
         fetchFn,
+        networkCode: currentNetworkCode,
         path: FOUR_MEME_TEMPLATE_SEARCH_PATH,
         method: 'POST',
         body: { sort, ...body },
@@ -305,6 +408,7 @@ export function createFourMemeApiClient({
       const response = await requestFourMemeJson({
         apiBase,
         fetchFn,
+        networkCode: currentNetworkCode,
         path: `${FOUR_MEME_TEMPLATE_CONFIG_PATH}?templateId=${encodeURIComponent(templateId)}`,
         method: 'GET',
       })
@@ -315,6 +419,7 @@ export function createFourMemeApiClient({
       const response = await requestFourMemeJson({
         apiBase,
         fetchFn,
+        networkCode: options.networkCode ?? currentNetworkCode,
         path: FOUR_MEME_TEMPLATE_CREATE_TOKEN_PATH,
         method: 'POST',
         accessToken: options.accessToken ?? currentAccessToken,
