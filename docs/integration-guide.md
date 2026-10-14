@@ -1362,6 +1362,11 @@ Recommended identification strategy:
 
 ## 13. Fee Model
 
+`OpenFourFeeRouter` addresses (partner / developer fee claims; prefer `core.feeRouter()` at runtime):
+
+- BNB Smart Chain mainnet: `0x7383B244B416Db16Aa9dd0AB7C296Aa60255B9A2`
+- Robinhood Chain mainnet: `0x7383B244B416Db16Aa9dd0AB7C296Aa60255B9A2`
+
 `OpenFourTools` `estimateBuy` / `estimateSell` already return user-perspective amounts, so third parties usually do not need to calculate fees themselves.
 
 Buy:
@@ -1464,17 +1469,23 @@ protocolFee
 - Partner and developer fees are excluded from `distributeFeesFromBalance`; Core transfers only the immediate amount `totalFee - developerFee - partnerFee`.
 - The rebate and partner share are splits of `protocolFee`, not additional user fees, so buy/sell amount formulas do not change.
 
-Partner registration and claims:
+Partner registration and claims (on `OpenFourFeeRouter`, addresses at the top of this section):
 
 - At create time, `CreateTokenArgs.partner` may be a nonzero address. Core calls `feeRouter.registerPartner(token, partner)` once; zero is a no-op and a second registration reverts.
 - Read the registered partner with `feeRouter.partnerOf(token)`.
-- Partners claim with:
+- Accrued share is **pull/claim** per quote asset (not auto-sent). Partner wallet flow:
 
 ```solidity
-feeRouter.partnerFeePending(quoteAsset, partner);
-feeRouter.claimPartnerFee(quoteAsset, to);
-feeRouter.claimPartnerFees(quoteAssets, to);
+// 1) Check pending for each quote the partner cares about (e.g. WBNB)
+uint256 pending = feeRouter.partnerFeePending(quoteAsset, partner);
+
+// 2) Partner EOA/contract calls FeeRouter (msg.sender must be `partner`)
+feeRouter.claimPartnerFee(quoteAsset, to);           // single quote → `to`
+feeRouter.claimPartnerFees(quoteAssets, to);         // batch quotes → `to`
 ```
+
+- Successful claims emit `PartnerFeeClaimed(quoteAsset, partner, amount, to)`.
+- Regular trading frontends do not call these; only partner dashboards / claim bots do.
 
 - Signing payload helpers must include `partner`:
 

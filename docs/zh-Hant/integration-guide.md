@@ -1362,6 +1362,11 @@ Tax strategy tag 不編碼在七個 `encodedTags` slot 中。對 `token.strategy
 
 ## 13. 費用模型
 
+`OpenFourFeeRouter` 地址（partner / developer 費用領取；執行時優先 `core.feeRouter()`）：
+
+- BNB Smart Chain mainnet：`0x7383B244B416Db16Aa9dd0AB7C296Aa60255B9A2`
+- Robinhood Chain mainnet：`0x7383B244B416Db16Aa9dd0AB7C296Aa60255B9A2`
+
 OpenFourTools 的 `estimateBuy` / `estimateSell` 已經返回使用者視角金額，第三方通常不需要自行計算費用。
 
 買入：
@@ -1464,17 +1469,23 @@ protocolFee
 - Partner 與 developer 費用不進入 `distributeFeesFromBalance`；Core 只轉入立即分發金額 `totalFee - developerFee - partnerFee`。
 - Rebate 與 partner 份額都是 `protocolFee` 的內部分流，不是額外向使用者收費，因此 buy/sell 金額公式不變。
 
-Partner 註冊與領取：
+Partner 註冊與領取（合約為 `OpenFourFeeRouter`，地址見本節開頭）：
 
 - 建立時，`CreateTokenArgs.partner` 可為非零地址。Core 會呼叫一次 `feeRouter.registerPartner(token, partner)`；零地址為 no-op，重複註冊會 revert。
 - 透過 `feeRouter.partnerOf(token)` 讀取已註冊 partner。
-- Partner 領取介面：
+- 累積份額為 **pull/claim**（按 quote 資產記帳，不會自動打出）。Partner 錢包流程：
 
 ```solidity
-feeRouter.partnerFeePending(quoteAsset, partner);
-feeRouter.claimPartnerFee(quoteAsset, to);
-feeRouter.claimPartnerFees(quoteAssets, to);
+// 1) 查詢待領取（例如 WBNB）
+uint256 pending = feeRouter.partnerFeePending(quoteAsset, partner);
+
+// 2) 以 partner 地址作為 msg.sender 呼叫 FeeRouter
+feeRouter.claimPartnerFee(quoteAsset, to);           // 單一 quote → `to`
+feeRouter.claimPartnerFees(quoteAssets, to);         // 批量 quote → `to`
 ```
+
+- 成功領取會發出 `PartnerFeeClaimed(quoteAsset, partner, amount, to)`。
+- 普通交易前端不必呼叫；僅 partner 後台 / 領取工具需要。
 
 - 簽名 payload helper 必須包含 `partner`：
 
