@@ -12,6 +12,7 @@ OpenFour 是 Four.Meme 推出的全新模組化 launch 引擎，為開發者提�
 - [TaxToken 稅費與分配機制](./mechanisms/tax-token.md)：說明 bonding 與遷移後稅費收取、四類分配、holder reward 手動注資、keeper 流程及 gas 行為。
 - [Lista V2 質押稅費機制](./mechanisms/lista-v2-stake.md)：說明 StrategyTaxToken 識別、Lista V2 pool 路由、tax dispatch、Lista vault share 分配和 keeper 接入。
 - [4Stock → bStock](./mechanisms/4stock-to-bstock-SIH.md)：說明 `module.migrate.pcs_v4_sih`、4Stock → bStock 池切換，以及聚合器如何用事件切換流動性路由。
+- [TapeFour](./mechanisms/tape-four.md)：基於 Tapeout 協議的 meme 挖礦模式（平價 NAND 募資 → PCS V2 → 挖 token）；本 preset 特有的識別、NFT 事件與交易注意點。
 - [開發文件 0.0.2](./developer-guide.md)：面向希望基於 OpenFour 開發自訂模組、Preset、validator 或 token 擴充的開發者，覆蓋架構原則、模組關係、介面要求、schema、validator 和官網提交流程。
 - [FairLaunch 示例說明](./sample.md)：說明 `contracts/` 中的 FairLaunch demo 合約結構、模組職責和示例玩法流程。
 

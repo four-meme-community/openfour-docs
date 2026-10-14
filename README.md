@@ -26,6 +26,7 @@ This directory contains OpenFour documentation for third-party integration, modu
 - [TaxToken Tax and Distribution Mechanism](./docs/mechanisms/tax-token.md): explains bonding and migrated tax collection, four-way distribution, manual holder-reward funding, keeper workflows, and gas behavior.
 - [Lista V2 Stake-Tax Mechanism](./docs/mechanisms/lista-v2-stake.md): explains StrategyTaxToken identification, Lista V2 pool routing, tax dispatch, Lista vault share distribution, and keeper integration.
 - [4Stock → bStock](./docs/mechanisms/4stock-to-bstock-SIH.md): explains `module.migrate.pcs_v4_sih`, 4Stock → bStock pool cutover, and event-driven liquidity-route switching for aggregators.
+- [TapeFour](./docs/mechanisms/tape-four.md): Tapeout-protocol meme mining mode (flat NAND fundraising → PCS V2 → mine token); preset-specific detection, NFT events, and trading caveats.
 - [Developer Guide 0.0.2](./docs/developer-guide.md): for developers building custom OpenFour modules, Presets, validators, or token extensions. It covers architecture principles, module relationships, interface requirements, schemas, validators, and the official website submission flow.
 - [FairLaunch Sample](./docs/sample.md): explains the FairLaunch demo contract structure, module responsibilities, and sample gameplay flow under `contracts/`.
 

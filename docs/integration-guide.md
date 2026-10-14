@@ -1299,6 +1299,7 @@ Token implementation tags:
 - `token.strategy_tax`: StrategyTaxToken with per-token strategy delegation.
 - `token.creator_rewards`: creator rewards token.
 - `token.uni`: Uni-style token with renderer/art or hook-driven behavior.
+- `token.tapeout`: Tapeout OpenFour ERC20 (`TapeoutOpenFourToken`); internal market is NAND NFT fundraising, not ERC20 bonding inventory.
 
 Token module tags:
 
@@ -1307,20 +1308,25 @@ Token module tags:
 - `module.token.strategy_tax`: initializes StrategyTaxToken and clones its registered tax strategy.
 - `module.token.creator_rewards`: initializes creator rewards tokens.
 - `module.token.uni`: initializes Uni-style tokens.
+- `module.token.tapeout`: initializes Tapeout tokens and binds Tapeout Factory / ProjectCore.
 
 Vault module tags:
 
 - `module.vault.standard`: standard sale custody/accounting vault.
 - `module.vault.tax_bonding`: tax-token bonding vault.
+- `module.vault.tapeout`: Tapeout vault (quote custody + NAND mint/burn bridge).
 
 Curve module tags:
 
 - `module.curve.bonding`: standard bonding curve pricing.
+- `module.curve.flat`: fixed unit price (`raiseAmount / saleAmount` in NAND units).
 
 Trade module tags:
 
 - `module.trade.simple`: minimal trade policy.
 - `module.trade.tax_bonding`: trade policy for tax-token bonding mechanics.
+- `module.trade.tapeout`: Tapeout internal-market trade policy (NAND units; no quote tax).
+- `module.trade.tapeout_whitelist`: same as tapeout trade, plus whitelist gate.
 
 Migrate module tags:
 
@@ -1330,6 +1336,7 @@ Migrate module tags:
 - `module.migrate.pcs_v4_sih`: bonding migration to a PancakeSwap Infinity SIH pool for 4Stock-quoted tokens; supports later 4Stock → bStock quote cutover.
 - `module.migrate.bonding_likwid`: bonding migration to Likwid V2.
 - `module.migrate.bonding_lista_v2`: bonding migration to a Lista V2 pair.
+- `module.migrate.tapeout_pcs_v2`: Tapeout graduation to PancakeSwap V2 + Tapeout `graduateFromOpenFour`.
 
 Custom data module tags:
 
@@ -1349,6 +1356,7 @@ Recommended identification strategy:
 - Determine migration target: prioritize the tag in the migrate slot.
 - Determine tax tokens or special gameplay: do not look only at the migrate slot; combine token/vault/trade and other slots.
 - For `token.strategy_tax`, call `strategyTag()` and combine the returned strategy tag with the token-module and migrate tags.
+- For TapeFour (`presetId = 1778027615734`, tag `token.tapeout`): internal market is NAND NFT fundraising — fork/filter bonding `TradeExecuted` away from ERC20 volume. Details: [TapeFour](./mechanisms/tape-four.md).
 - Treat `migratedPools(address)` as a transfer-guard/tax-classification marker. Use phase plus `MigrateExecuted` to identify the active external pool.
 - Unknown modules: read `registry.tagOf(tagId)` and preserve the original tagId.
 
