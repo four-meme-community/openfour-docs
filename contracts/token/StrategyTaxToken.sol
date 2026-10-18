@@ -97,8 +97,8 @@ contract StrategyTaxToken is OpenFourToken, ITaxTokenBonding {
         __OpenFourToken_init(c);
 
         StrategyTaxTokenParams memory p = _decodeParams(c.tokenParams);
-        require(p.buyFeeRate <= 1000, "StrategyTaxToken: invalid buyFeeRate");
-        require(p.sellFeeRate <= 1000, "StrategyTaxToken: invalid sellFeeRate");
+        require(p.buyFeeRate >= 100 && p.buyFeeRate <= 1000, "StrategyTaxToken: invalid buyFeeRate");
+        require(p.sellFeeRate >= 100 && p.sellFeeRate <= 1000, "StrategyTaxToken: invalid sellFeeRate");
         require(p.minShare >= MIN_SHARE_LOWER_BOUND, "StrategyTaxToken: invalid minShare");
         require(p.taxStrategy != address(0), "StrategyTaxToken: zero tax strategy");
 

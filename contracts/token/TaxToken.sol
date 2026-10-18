@@ -27,6 +27,9 @@ interface ITokenHelper {
 interface IShareHolderManager {
     /// @notice Returns whether an account is excluded from holder rewards.
     function isBlacklisted(address token, address account) external view returns (bool);
+    /// @notice Special-address payout for `account`, for example a Binance Alpha router.
+    /// @return recipient Mapped receiver, or zero when `account` is paid directly.
+    function claimRedirect(address account) external view returns (address);
 }
 
 /// @title TaxToken
@@ -171,6 +174,8 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         uint256 amountLiquidity
     );
     event FeeClaimed(address account, uint256 amount);
+    /// @notice Emitted when a claim is paid to a ShareHolderManager redirect instead of the shareholder.
+    event FeeClaimRedirected(address indexed account, address indexed recipient, uint256 amount);
     event FeeInsufficient(address account, uint256 claimable, uint256 balance);
     event FeeDispatchDeferred(uint8 indexed kind, uint256 amount, bytes reason);
     /// @notice Signals that accumulated work has crossed a dispatch threshold.
@@ -188,8 +193,14 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         TaxTokenParams memory p = _decodeOrDefault(c.tokenParams, c.creator);
 
         require(p.buyFeeRate <= 1000, "TaxToken: invalid buyFeeRate");
-        require(p.sellFeeRate >= 100 && p.sellFeeRate <= 1000, "TaxToken: invalid sellFeeRate");
-        require(p.rateFounder + p.rateHolder + p.rateBurn + p.rateLiquidity == 100, "TaxToken: invalid total rates");
+        require(p.sellFeeRate <= 1000, "TaxToken: invalid sellFeeRate");
+        // Allocation unused when both fees are 0 — skip the 100% sum check.
+        if (p.buyFeeRate != 0 || p.sellFeeRate != 0) {
+            require(
+                p.rateFounder + p.rateHolder + p.rateBurn + p.rateLiquidity == 100,
+                "TaxToken: invalid total rates"
+            );
+        }
         require(p.rateFounder == 0 || p.founder != address(0), "TaxToken: founder required when rateFounder > 0");
 
         quote = c.quoteAsset;
@@ -606,7 +617,7 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         }
     }
 
-    function _isShareHolder(address account) internal view returns (bool) {
+    function _isShareHolder(address account) internal view virtual returns (bool) {
         return !migratedPools[account] &&
             account != vault &&
             account != address(this) &&
@@ -742,8 +753,16 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         if (quote == address(0)) {
             return;
         }
-        if (shareHolderManager != address(0) && IShareHolderManager(shareHolderManager).isBlacklisted(address(this), account)) {
-            return;
+        address recipient = account;
+        if (shareHolderManager != address(0)) {
+            if (IShareHolderManager(shareHolderManager).isBlacklisted(address(this), account)) {
+                return;
+            }
+            // Special addresses (for example a Binance Alpha router) are paid instead of the shareholder.
+            address redirected = IShareHolderManager(shareHolderManager).claimRedirect(account);
+            if (redirected != address(0)) {
+                recipient = redirected;
+            }
         }
         uint256 amountQuote = claimableFee(account);
         if (amountQuote == 0) {
@@ -763,10 +782,13 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
             return;
         }
 
-        IERC20(quote).safeTransfer(account, amountQuote);
+        IERC20(quote).safeTransfer(recipient, amountQuote);
         info.claimed += amountQuote;
         feeClaimed += amountQuote;
         emit FeeClaimed(account, amountQuote);
+        if (recipient != account) {
+            emit FeeClaimRedirected(account, recipient, amountQuote);
+        }
     }
 
     function _swapForQuote(address to, uint256 amountToken) internal returns (uint256) {
@@ -854,7 +876,7 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
     ///      External holder-reward funding must use `manualFundHolderRewards`.
     receive() external payable {}
 
-    function _descriptorTag() internal pure override returns (string memory) {
+    function _descriptorTag() internal pure virtual override returns (string memory) {
         return "token.tax";
     }
 }
