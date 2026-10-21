@@ -24,6 +24,7 @@ This directory contains OpenFour documentation for third-party integration, modu
 
 - [Integration Guide 0.0.6](./docs/integration-guide.md): for wallets, trading UIs, indexers, data backends, launch platforms, and aggregators integrating creation, estimation, trading, event listening, token recognition, module recognition, error handling, and event interpretation.
 - [TaxToken Tax and Distribution Mechanism](./docs/mechanisms/tax-token.md): explains bonding and migrated tax collection, four-way distribution, manual holder-reward funding, keeper workflows, and gas behavior.
+- [Unverified Royalty (`ForwardVault`)](./docs/mechanisms/unverified-royalty.md): how the platform ForwardVault wraps a developer TaxVault template (6%/94% split), how to implement a compliant template, and how to deploy + create a token.
 - [Lista V2 Stake-Tax Mechanism](./docs/mechanisms/lista-v2-stake.md): explains StrategyTaxToken identification, Lista V2 pool routing, tax dispatch, Lista vault share distribution, and keeper integration.
 - [4Stock → bStock](./docs/mechanisms/4stock-to-bstock-SIH.md): explains `module.migrate.pcs_v4_sih`, 4Stock → bStock pool cutover, and event-driven liquidity-route switching for aggregators.
 - [TapeFour](./docs/mechanisms/tape-four.md): Tapeout-protocol meme mining mode (flat NAND fundraising → PCS V2 → mine token); preset-specific detection, NFT events, and trading caveats.
@@ -38,7 +39,7 @@ The `contracts/` directory contains a FairLaunch reference implementation:
 - `contracts/libraries/OpenFourTypes.sol`: shared data structures used by Core, modules, tools, and UIs.
 - `contracts/token/`: public reference source for `OpenFourToken`, `TaxToken`, `StrategyTaxToken`, and other token implementations.
 - `contracts/taxstrategy/ITaxStrategy.sol`: public interface for per-token strategy-tax integrations.
-- `contracts/taxvault/`: public TaxVault interface and `BaseTaxVault` base contract for custom royalty templates.
+- `contracts/taxvault/`: public TaxVault interface, `BaseTaxVault` base contract, and platform `ForwardVault` wrapper for custom royalty templates.
 - `contracts/modules/`: Token, Vault, Curve, Trade, CustomData, and Migrate module examples.
 - `contracts/validators/FairLaunchPresetValidator.sol`: FairLaunch cross-module parameter validator example.
 - `scripts/`: JavaScript helpers and examples for create-argument encoding, schema resolution, on-chain submission, ABI sync, and encoded tag parsing.

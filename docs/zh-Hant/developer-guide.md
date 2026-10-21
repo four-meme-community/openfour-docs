@@ -771,7 +771,9 @@ Custom data module：
 
 ## 25. 開發未驗證版稅 TaxVault 模板
 
-OpenFour Royalty 模式允許建立者透過平台 `ForwardVault` 包裝器使用未驗證的 TaxVault implementation。參考包裝器已部署於 [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code)。使用此模式不代表 OpenFour 已審核、審計、註冊或認可所提交的模板。
+> 機制總覽（建議先讀）：[未驗證版稅（`ForwardVault`）](./mechanisms/unverified-royalty.md)。
+
+OpenFour Royalty 模式允許建立者透過平台 `ForwardVault` 包裝器使用未驗證的 TaxVault implementation。參考 implementation：BSC [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code)、Robinhood [`0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C`](https://robin.etherscan.io/address/0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C)。使用此模式不代表 OpenFour 已審核、審計、註冊或認可所提交的模板。
 
 ### 25.1 運行結構與版稅分配
 
@@ -796,7 +798,7 @@ ForwardVault.InitParams({
 
 第一次收款會將包裝器鎖定為 `Native` 或 `ERC20` 收益模式；之後若收到另一模式的資產，`ForwardVault` 呼叫會以 `RevenueAssetMismatch` revert。這不一定代表整個系統回滾：ERC20 路徑中，`TaxToken` 會先轉帳再呼叫 callback，並捕獲 callback revert，因此資金可能留在包裝器；native 路徑則由 `TaxToken` 記錄失敗交付並等待後續重試。
 
-目前的參考包裝器只在 BSC mainnet（`chainId 56`）及 BSC testnet（`chainId 97`）解析 wrapped native；在其他鏈上初始化會以 `UnsupportedChain` revert。
+目前的參考包裝器在 BSC（`56`）與 Robinhood（`4663`）解析 wrapped native；在其他鏈上初始化會以 `UnsupportedChain` revert。
 
 ### 25.2 模板必需介面
 
@@ -834,7 +836,7 @@ implementation 應繼承 `BaseTaxVault`，或完整重現其初始化及 caller 
 - 在 implementation constructor 中停用初始化，並將每個 clone 的狀態初始化全部放入 `_customInit()`。
 - 定義唯一 `TYPE_ID`；storage layout 或初始化 ABI 發生變更時使用新的 type/version。
 - 在鏈上校驗所有解碼後的地址、bps、陣列邊界及跨欄位約束。
-- quote 可能是 wrapped native 時，必須能接收 native 轉帳。
+- 必須 override payable `receive()`，以便 quote 為 wrapped native 時 ForwardVault 能以 `call{value}` 轉入約 94% native 份額。
 - 支援 fee-on-transfer 資產時使用 `SafeERC20` 和實際餘額差額。
 - 明確限制提款及配置寫入權限；僅有 ownership 並不能讓任意外部呼叫變得安全。
 - 不得依賴 constructor 寫入的可變 storage、僅 proxy 可用的行為或非空 `roles` 陣列。
@@ -871,6 +873,19 @@ contract MyRoyaltyVault is BaseTaxVault {
         return 0x1234567890123456789012345678901234567890;
     }
 
+    /// @dev 必須：ForwardVault 以 call{value} 轉入約 94% native 份額。
+    receive() external payable override {
+        // 執行模板特定的 native 會計或分配。
+    }
+
+    function onERC20TaxReceived(
+        address asset,
+        uint256 amount
+    ) public override {
+        super.onERC20TaxReceived(asset, amount);
+        // 執行模板特定的會計或分配。
+    }
+
     function _customInit(
         address[] calldata,
         bytes calldata initParams
@@ -881,14 +896,6 @@ contract MyRoyaltyVault is BaseTaxVault {
         require(p.recipientBps <= 10_000, "invalid bps");
         recipient = p.recipient;
         recipientBps = p.recipientBps;
-    }
-
-    function onERC20TaxReceived(
-        address asset,
-        uint256 amount
-    ) public override {
-        super.onERC20TaxReceived(asset, amount);
-        // 執行模板特定的 accounting 或分配。
     }
 
     function moduleEncodeSchema()

@@ -771,7 +771,9 @@ Third-party integrators rely on this information for UI, indexing, trade routing
 
 ## 25. Developing an Unverified Royalty TaxVault Template
 
-OpenFour Royalty mode lets a creator use an unverified TaxVault implementation through the platform `ForwardVault` wrapper. The reference wrapper is deployed at [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code). This path does not mean the submitted template has been reviewed, audited, registered, or endorsed by OpenFour.
+> Mechanism overview (recommended first read): [Unverified Royalty (`ForwardVault`)](./mechanisms/unverified-royalty.md).
+
+OpenFour Royalty mode lets a creator use an unverified TaxVault implementation through the platform `ForwardVault` wrapper. Reference implementations: BSC [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code), Robinhood [`0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C`](https://robin.etherscan.io/address/0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C). This path does not mean the submitted template has been reviewed, audited, registered, or endorsed by OpenFour.
 
 ### 25.1 Runtime Structure and Royalty Split
 
@@ -796,7 +798,7 @@ For each tax receipt:
 
 The first receipt locks the wrapper to `Native` or `ERC20` revenue mode. A later receipt of the other mode makes the `ForwardVault` call revert with `RevenueAssetMismatch`. This is not always a full-system rollback: on the ERC20 path, `TaxToken` transfers the asset before calling the callback and catches a callback revert, so funds may remain in the wrapper. The native path records failed delivery for later retry in `TaxToken`.
 
-The current reference wrapper resolves wrapped native only for BSC mainnet (`chainId 56`) and BSC testnet (`chainId 97`). Initialization on another chain reverts with `UnsupportedChain`.
+The current reference wrapper resolves wrapped native for BSC (`56`) and Robinhood (`4663`). Initialization on another chain reverts with `UnsupportedChain`.
 
 ### 25.2 Required Template Interface
 
@@ -834,7 +836,7 @@ An implementation used as `template` should:
 - Disable initialization on the implementation constructor and put all per-clone state setup in `_customInit()`.
 - Define a unique `TYPE_ID`; changing storage layout or initialization ABI should use a new type/version.
 - Validate every decoded address, bps value, array bound, and cross-field invariant on-chain.
-- Accept native transfers if the quote can be wrapped native.
+- Override payable `receive()` so ForwardVault can forward native ~94% via `call{value}` when the quote is wrapped native.
 - Use `SafeERC20` and actual balance deltas when supporting fee-on-transfer assets.
 - Restrict withdrawals and configuration writes explicitly; ownership alone does not make arbitrary external calls safe.
 - Avoid relying on constructor-written mutable storage, proxy-only behavior, or a non-empty `roles` array.
@@ -871,6 +873,19 @@ contract MyRoyaltyVault is BaseTaxVault {
         return 0x1234567890123456789012345678901234567890;
     }
 
+    /// @dev Required: ForwardVault sends native ~94% here via call{value}.
+    receive() external payable override {
+        // Apply template-specific native accounting or distribution.
+    }
+
+    function onERC20TaxReceived(
+        address asset,
+        uint256 amount
+    ) public override {
+        super.onERC20TaxReceived(asset, amount);
+        // Apply template-specific accounting or distribution.
+    }
+
     function _customInit(
         address[] calldata,
         bytes calldata initParams
@@ -881,14 +896,6 @@ contract MyRoyaltyVault is BaseTaxVault {
         require(p.recipientBps <= 10_000, "invalid bps");
         recipient = p.recipient;
         recipientBps = p.recipientBps;
-    }
-
-    function onERC20TaxReceived(
-        address asset,
-        uint256 amount
-    ) public override {
-        super.onERC20TaxReceived(asset, amount);
-        // Apply template-specific accounting or distribution.
     }
 
     function moduleEncodeSchema()
