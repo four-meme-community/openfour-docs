@@ -1296,6 +1296,7 @@ Token implementation tags:
 
 - `token.standard`: standard OpenFour ERC20.
 - `token.tax`: TaxToken with transfer-tax and tax-vault behavior.
+- `token.tax.binance_agent`: Binance Agent ID Exclusive TaxToken (inner-market transfer lock; see [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md)).
 - `token.strategy_tax`: StrategyTaxToken with per-token strategy delegation.
 - `token.creator_rewards`: creator rewards token.
 - `token.uni`: Uni-style token with renderer/art or hook-driven behavior.
@@ -1319,12 +1320,15 @@ Vault module tags:
 Curve module tags:
 
 - `module.curve.bonding`: standard bonding curve pricing.
+- `module.curve.bonding_binance_agent`: Agent bonding curve with 1% per-address hold clamp.
 - `module.curve.flat`: fixed unit price (`raiseAmount / saleAmount` in NAND units).
 
 Trade module tags:
 
 - `module.trade.simple`: minimal trade policy.
 - `module.trade.tax_bonding`: trade policy for tax-token bonding mechanics.
+- `module.trade.tax_bonding_binance_agent`: Binance Agentic Wallet (Agent ID) gate + hold/presale caps (see [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md)).
+- `module.token.binance_agent`: initializes Binance Agent ID Exclusive TaxToken (0-tax allowed).
 - `module.trade.tapeout`: Tapeout internal-market trade policy (NAND units; no quote tax).
 - `module.trade.tapeout_whitelist`: same as tapeout trade, plus whitelist gate.
 
@@ -1357,6 +1361,7 @@ Recommended identification strategy:
 - Determine tax tokens or special gameplay: do not look only at the migrate slot; combine token/vault/trade and other slots.
 - For `token.strategy_tax`, call `strategyTag()` and combine the returned strategy tag with the token-module and migrate tags.
 - For TapeFour (`presetId = 1778027615734`, tag `token.tapeout`): internal market is NAND NFT fundraising — fork/filter bonding `TradeExecuted` away from ERC20 volume. Details: [TapeFour](./mechanisms/tape-four.md).
+- For Binance Agent ID Exclusive (`presetId = 1778027615735`, tag `token.tax.binance_agent`): bonding trades need a Binance Agentic Wallet with Agent ID, 1% hold cap, and locked P2P transfers until migrate. Details: [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md).
 - Treat `migratedPools(address)` as a transfer-guard/tax-classification marker. Use phase plus `MigrateExecuted` to identify the active external pool.
 - Unknown modules: read `registry.tagOf(tagId)` and preserve the original tagId.
 

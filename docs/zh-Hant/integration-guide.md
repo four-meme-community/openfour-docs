@@ -1296,6 +1296,7 @@ Token implementation tags：
 
 - `token.standard`：標準 OpenFour ERC20。
 - `token.tax`：帶轉帳稅和 tax vault 行為的 TaxToken。
+- `token.tax.binance_agent`：Binance Agent ID Exclusive TaxToken（內盤轉帳鎖；見 [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md)）。
 - `token.strategy_tax`：將稅費處理委託給每 token 策略的 StrategyTaxToken。
 - `token.creator_rewards`：創作者獎勵 token。
 - `token.uni`：帶 renderer/art 或 hook 驅動行為的 Uni-style token。
@@ -1319,12 +1320,15 @@ Vault module tags：
 Curve module tags：
 
 - `module.curve.bonding`：標準 bonding curve 定價。
+- `module.curve.bonding_binance_agent`：Agent bonding 曲線，帶 1% 單地址持倉截斷。
 - `module.curve.flat`：固定單價（以 NAND 單位計的 `raiseAmount / saleAmount`）。
 
 Trade module tags：
 
 - `module.trade.simple`：最小交易策略。
 - `module.trade.tax_bonding`：tax-token bonding 玩法的交易策略。
+- `module.trade.tax_bonding_binance_agent`：Binance Agentic Wallet（Agent ID）門禁 + 持倉/預購上限（見 [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md)）。
+- `module.token.binance_agent`：初始化 Binance Agent ID Exclusive TaxToken（允許 0 稅）。
 - `module.trade.tapeout`：Tapeout 內盤交易策略（NAND 單位；無 quote 稅）。
 - `module.trade.tapeout_whitelist`：同上，並加白名單門禁。
 
@@ -1357,6 +1361,7 @@ Tax strategy tag 不編碼在七個 `encodedTags` slot 中。對 `token.strategy
 - 判斷稅幣或特殊玩法：不要只看 migrate slot，應組合 token/vault/trade 等多個 slot。
 - 對 `token.strategy_tax` 呼叫 `strategyTag()`，並將返回的 strategy tag 與 token module、migrate tag 組合判斷。
 - 對 TapeFour（`presetId = 1778027615734`，tag `token.tapeout`）：內盤是 NAND NFT 募資，需把 bonding `TradeExecuted` 與 ERC20 成交量管道分流。詳見 [TapeFour](./mechanisms/tape-four.md)。
+- 對 Binance Agent ID Exclusive（`presetId = 1778027615735`，tag `token.tax.binance_agent`）：內盤需 Binance Agentic Wallet with Agent ID、1% 持倉上限，遷移前鎖定錢包互轉。詳見 [Binance Agent ID Exclusive](./mechanisms/binance-agent-id-exclusive.md)。
 - 將 `migratedPools(address)` 視為 transfer guard / 稅費分類標記；使用 phase 和 `MigrateExecuted` 判斷實際啟用的外盤 pool。
 - 遇到未知模組：讀 `registry.tagOf(tagId)`，並保留原始 tagId。
 

@@ -27,6 +27,8 @@ interface ITokenHelper {
 interface IShareHolderManager {
     /// @notice Returns whether an account is excluded from holder rewards.
     function isBlacklisted(address token, address account) external view returns (bool);
+    /// @notice Returns whether an account should be skipped by holder share accounting.
+    function isNotHolder(address token, address account) external view returns (bool);
     /// @notice Special-address payout for `account`, for example a Binance Alpha router.
     /// @return recipient Mapped receiver, or zero when `account` is paid directly.
     function claimRedirect(address account) external view returns (address);
@@ -311,7 +313,7 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         require(p.minDispatchQuote > 0, "TaxToken: zero minDispatchQuote");
     }
 
-    function _transfer(address from, address to, uint256 amount) internal override {
+    function _transfer(address from, address to, uint256 amount) internal virtual override {
         require(to != address(this), "TaxToken: invalid recipient");
         if (
             shareHolderManager != address(0) &&
@@ -622,17 +624,25 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
             account != vault &&
             account != address(this) &&
             account != address(0) &&
-            account != DEAD;
+            account != DEAD &&
+            (
+                shareHolderManager == address(0) ||
+                    !IShareHolderManager(shareHolderManager).isNotHolder(address(this), account)
+            );
     }
 
     function _updateShare(address account) internal {
-        if (rateHolder == 0 || !_isShareHolder(account)) {
+        if (rateHolder == 0) {
             return;
         }
 
-        uint256 newShare = balanceOf(account);
-        if (newShare < minShare) {
-            newShare = 0;
+        // Ineligible accounts use zero instead of returning so an existing share is settled and removed.
+        uint256 newShare;
+        if (_isShareHolder(account)) {
+            newShare = balanceOf(account);
+            if (newShare < minShare) {
+                newShare = 0;
+            }
         }
 
         UserInfo storage info = userInfo[account];
@@ -660,6 +670,12 @@ contract TaxToken is OpenFourToken, ITaxTokenBonding {
         } else {
             totalShares -= (curShare - newShare);
         }
+    }
+
+    /// @notice Re-synchronizes an account after its shareholder-manager status changes.
+    function syncShareFromManager(address account) external {
+        require(msg.sender == shareHolderManager, "TaxToken: only share manager");
+        _updateShare(account);
     }
 
     /// @notice Returns claimable quote rewards for an account, including pending per-share accrual.
