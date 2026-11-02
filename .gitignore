@@ -1,2 +1,12 @@
 .DS_Store
-node_modules/
+**/node_modules/
+**/dist/
+**/.vite/
+**/artifacts/
+**/cache/
+**/.env
+**/.env.local
+developer/fork-deploy/out/
+developer/startup/out/
+developer/workbench/data/*.json
+developer/test-ui/

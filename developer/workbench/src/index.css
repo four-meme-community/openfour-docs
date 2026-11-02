@@ -1,0 +1,39 @@
+:root {
+  --ink: #070806;
+  --paper: #f2f4ed;
+  --green: #6dfe33;
+  --muted: #92988e;
+  --dim: #6d7466;
+  --line: rgba(242, 244, 237, 0.12);
+  --line2: rgba(242, 244, 237, 0.26);
+  --sans: Archivo, "Helvetica Neue", Arial, sans-serif;
+  --px: clamp(16px, 4.2vw, 72px);
+  color-scheme: dark;
+  font-family: var(--sans);
+  line-height: 1.5;
+  color: var(--paper);
+  background-color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: var(--ink);
+  background-image: url("/art/grain-body.webp");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+a { color: var(--paper); }
+a:hover { color: var(--green); }
+
+button, input, textarea { font-family: inherit; }
+
+#root { min-height: 100vh; }

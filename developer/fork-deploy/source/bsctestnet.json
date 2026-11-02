@@ -1,0 +1,25 @@
+{
+  "role": "developer-source",
+  "network": "bsctestnet",
+  "chainId": 97,
+  "note": "Shared developer hub. Default SOURCE_DEPLOYMENT for fork-deploy. Fork your own proxy set before registering modules unless you own this Registry.",
+  "deployedAt": "2026-11-02T06:08:56.479Z",
+  "deployer": "0xCcFC8E153bd979C0373B5C818aF191b2Bfc9fA14",
+  "addresses": {
+    "registry": "0xE5014c0616e528B0ABF7CC120A58032c1FbE7060",
+    "feeRouter": "0x5BEA99298A6E731897ef2516EafC1f0289e0cc87",
+    "core": "0xd6DAC7815A3B007822E0829bcDB3f193041285Db",
+    "createDeployer": "0x8B67c37f17856B13Ff86A33Cc5386bC0A589D37B",
+    "tools": "0xdECbE01E91A3c0Abf841d3E32c1587a3b62E38c6"
+  },
+  "moduleIds": {
+    "TOKEN_STANDARD": "0x48f90f4115ab8ef5e9e882e46964405e86bb62323d676b602350fc8baef2637e",
+    "VAULT_BASIC": "0x3e7c54e066dccd796d82c61050797d9b41fc573ce6b95b1968fb6e21c9df315b",
+    "CURVE_BONDING": "0x0e4ee145a2864ef2ac97032a3c00ed121816998110d1cf364770093ce952cb47",
+    "TRADE_SIMPLE": "0x379c13a7faced71bfa110d4297fd89666ac21c3407816ab9ef26027c15dce10d",
+    "MIGRATE_BONDING": "0x61ebdadb977338830566ff8b1ab173b121e652b69074c64dc393c15c91dc6f06"
+  },
+  "presets": {
+    "bondingV1": "1778027615722"
+  }
+}

@@ -1,0 +1,46 @@
+/**
+ * OpenFour official-website design tokens.
+ * Use these variables when building a temporary preset UI for audit submit.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Brand */
+  --of-brand: #6cff32;
+  --of-brand-rgb: 108, 255, 50;
+  --of-brand-soft: #76ed47;
+  --of-brand-pale: #c4ffad;
+  --of-brand-mid: #76f951;
+
+  /* Surfaces */
+  --of-bg: #000000;
+  --of-aside: #0d0d0d;
+  --of-surface: #141414;
+  --of-surface-green: #141a16;
+  --of-border: #2a2a2a;
+  --of-border-strong: #252b33;
+  --of-border-muted: #3d3d3d;
+
+  /* Text */
+  --of-text: #ffffff;
+  --of-muted: #888888;
+  --of-placeholder: #717171;
+
+  /* Status */
+  --of-danger: #ff4a32;
+  --of-warn: #ffaf10;
+  --of-sage: #d6dec7;
+  --of-success: #197b28;
+
+  /* Radii / spacing */
+  --of-radius: 8px;
+  --of-radius-lg: 14px;
+  --of-input-h: 50px;
+  --of-font: var(--font-nunito, -apple-system, "PingFang TC", "Microsoft JhengHei", "Hiragino Sans", "Noto Sans CJK TC", sans-serif);
+
+  /* Focus / glow */
+  --of-focus-ring: 0 0 0 3px rgba(var(--of-brand-rgb), 0.12);
+  --of-brand-glow: 0 0 18px -6px rgba(var(--of-brand-rgb), 0.35);
+  --of-brand-gradient: linear-gradient(180deg, #aaff7a 0%, #6cff32 100%);
+  --of-brand-line: linear-gradient(90deg, #76ed47 0%, #6cff32 50%, #c4ffad 100%);
+}

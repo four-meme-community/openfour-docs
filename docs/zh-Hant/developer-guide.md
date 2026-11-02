@@ -2,7 +2,7 @@
 
 [English](../developer-guide.md) | [繁體中文](./developer-guide.md)
 
-本文面向希望基於 OpenFour 創作新玩法、新 Preset、新模組或新 token 類型的開發者。OpenFour 是 Four.Meme 推出的模組化 launch 引擎。它說明 OpenFour 的模組架構、模組關係、必需介面、開發邊界、schema 設計、Preset 註冊點，以及如何用本目錄裡的 FairLaunch 範例作為起點實現一套自訂玩法。
+本文面向希望基於 OpenFour 創作新玩法、新 Preset、新模組或新 token 類型的開發者。OpenFour 是 Four.Meme 推出的模組化 launch 引擎。它說明 OpenFour 的模組架構、模組關係、必需介面、開發邊界、schema 設計、Preset 註冊點，以及如何用 [`developer/startup/`](../../developer/startup/) 裡的 FairLaunch 起步工程作為起點實現一套自訂玩法。
 
 範例合約僅用於 demo 和開發參考，未經審計，不應用於其他正式生產用途。
 
@@ -145,18 +145,22 @@ Descriptor：
 
 `evaluate()` 返回的 hook data 只能作為提示。`executeMigration()` 必須重新校驗條件、token、caller 和金額上限。
 
-## 5. FairLaunch 範例結構
+## 5. FairLaunch 範例
 
-本目錄提供一套 FairLaunch demo：
+FairLaunch 範例就是 [`developer/startup/`](../../developer/startup/) 這套 Hardhat 起步工程。模組如何拆分、發射流程、編譯測試，以及如何替換某個槽位，都寫在該目錄的 README。本指南保留協議規則；可運行的程式碼在起步工程裡。
 
-- `contracts/modules/token/StandardTokenModule.sol`
-- `contracts/token/OpenFourToken.sol`
-- `contracts/modules/vault/StandardVault.sol`
-- `contracts/modules/curve/FairLaunchCurveModule.sol`
-- `contracts/modules/trade/FairLaunchTradeModule.sol`
-- `contracts/modules/data/FairLaunchCustomDataModule.sol`
-- `contracts/modules/migrate/FairLaunchMigrateModule.sol`
-- `contracts/validators/FairLaunchPresetValidator.sol`
+若要把此範例登記到自己的 fork，並跑一遍建立 / 買入 / 賣出，使用 `developer/startup/scripts/register.js` 再跑 `create-and-trade.js`，並設 `PRESET=fairlaunch`。開發自己的玩法時，複製 `developer/startup/presets/fairlaunch.json` 並只改這份 JSON，不要複製 JS 腳本。`create-and-trade.js` 會按鏈上 schema 編碼參數。不要寫入官方 Registry。
+
+`developer/startup` 包含：
+
+- `developer/startup/contracts/modules/token/StandardTokenModule.sol`
+- `developer/startup/contracts/token/OpenFourToken.sol`（也放在倉庫根目錄 `contracts/token/`，供其他 token 類型繼承）
+- `developer/startup/contracts/modules/vault/StandardVault.sol`
+- `developer/startup/contracts/modules/curve/FairLaunchCurveModule.sol`
+- `developer/startup/contracts/modules/trade/FairLaunchTradeModule.sol`
+- `developer/startup/contracts/modules/data/FairLaunchCustomDataModule.sol`
+- `developer/startup/contracts/modules/migrate/FairLaunchMigrateModule.sol`
+- `developer/startup/contracts/validators/FairLaunchPresetValidator.sol`
 
 FairLaunch 的玩法是：
 
@@ -166,7 +170,7 @@ FairLaunch 的玩法是：
 - Trade module 可以限制單筆買入、累計買入、賣出上限和額外費用。
 - Custom data module 記錄累計買入/賣出，供 trade module 讀取。
 - Migrate module 在售罄、達到 soft cap 或到期時允許遷移。
-- 遷移可以透過 adapter 執行外部 DEX 加池，也可以不執行鏈上流動性動作。
+- 遷移在 BSC / BSC Testnet 按官方 PCS V2 路徑向空 pair 加池；其他鏈跳過加池。
 
 ## 6. 開發一個新 Preset
 
@@ -245,7 +249,7 @@ TradeModule 必須實現 `IOpenFourTradeModule`。
 - `minAmount`
 - `maxAmount`
 - `FeeTier[] fees`
-- `reason`
+- `revertData`（`allowed` 為 false 時的 ABI 編碼 revert payload；允許時為空）
 
 實現要求：
 
@@ -253,7 +257,35 @@ TradeModule 必須實現 `IOpenFourTradeModule`。
 - 如果需要累計購買、冷卻時間、白名單使用次數等狀態，把狀態放到 CustomDataModule。
 - 可以讀取 token、vault 或 customData 的 view 狀態輔助決策。
 - FeeTier 的 `bps` 應有上限，收款地址應校驗非零。
-- 超出規則時返回 `allowed = false`，不要用 revert 做普通業務拒絕。
+- 超出規則時返回 `allowed = false` 並帶上 `revertData`，不要用 `revert` 做普通業務拒絕。`evaluate` 保持 view-only；Core 之後呼叫 `OpenFourTypes.revertIfDisallowed`，會原樣拋出 `revertData`。
+
+### 如何返回 `revertData`
+
+優先使用自訂 `error Xxx(...)`，編碼方式與 `revert Xxx(args)` 相同：
+
+```solidity
+error FairTradeMissingCustomData(address token);
+error FairTradeCumulativeBuyLimit(address trader, uint256 purchased, uint256 maxPerAddress);
+
+if (customData == address(0)) {
+    return OpenFourTypes.TradeResult({
+        allowed: false,
+        minAmount: 0,
+        maxAmount: 0,
+        fees: new OpenFourTypes.FeeTier[](0),
+        revertData: abi.encodeWithSelector(FairTradeMissingCustomData.selector, ctx.token)
+    });
+}
+```
+
+規則：
+
+- `revertData` = selector + ABI 編碼參數。Core 原樣拋出後，錢包看到的就是這個 error。
+- `allowed` 為 true 時，`revertData` 必須為空（`""` / `0x`）。
+- `Error(string)`（`abi.encodeWithSignature("Error(string)", reason)`）也可以，但更建議自訂 error：有類型、更省 gas，測試可用 `revertedWithCustomError`。
+- 不要在 `evaluate` 裡 `revert FairTradeMissingCustomData(...)`。把編碼後的 payload 返回給 Core，讓 Core 在完成自身檢查後再拋出。
+
+參考：`developer/startup/contracts/modules/trade/FairLaunchTradeModule.sol`。
 
 ## 9. CustomDataModule 開發規則
 
@@ -356,27 +388,6 @@ Token 擴展適合：
 - 創作者獎勵。
 - 鏈上 metadata / NFT-like 渲染。
 - 外盤遷移後特殊限制。
-
-### 12.1 UniToken Renderer
-
-`contracts/interfaces/IUniTokenRenderer.sol` 定義 Uni 類 token 玩法使用的 renderer 介面。
-
-renderer 是外部合約，接收 badge/token id 以及該 badge 儲存的 seed，並返回完整的 `tokenURI` 字串：
-
-```solidity
-function tokenURI(uint256 tokenId, uint256 seed) external view returns (string memory);
-```
-
-典型使用方式：
-
-- UniToken 相容 token 為每個 badge/token id 儲存或推導一個確定性的 `seed`。
-- 查詢 metadata 時，token 將渲染工作委託給 renderer 合約。
-- renderer 返回完整 metadata URI，通常是 `data:application/json;base64,...`。
-- JSON 的 `image` 欄位可以包含鏈上 SVG、base64 image 或其他支援的 media URI。
-
-建立 token 時使用的自訂 renderer 必須實作 ERC-165，並對 `type(IUniTokenRenderer).interfaceId` 返回 `true`。Preset 的 default renderer 被協議信任，可以跳過這個外部 renderer 介面檢查。
-
-當 token 玩法需要鏈上藝術、動態 metadata、生成式 badge 視覺，或在不改變核心 token/module 介面的前提下提供專案特定展示層時，可以使用自訂 renderer。
 
 ## 13. Module Schema
 
@@ -500,6 +511,8 @@ OpenFourTypes.Preset({
 
 如果玩法不需要 post-trade 狀態，`customDataId` 可以為 `bytes32(0)`。但 FairLaunch 範例中 `FairLaunchTradeModule.maxPerAddress > 0` 時，TradeModule 需要讀取累計購買量，因此 Preset 必須配置 `FairLaunchCustomDataModule`。
 
+要在 fork 上登記這套組合，複製 `developer/startup/presets/fairlaunch.json`，讓各槽位的 `contract` / `keySource` 對上上面的 id，然後跑 `PRESET=<id> npx hardhat run scripts/register.js`。JS 腳本保持通用，不用複製。
+
 建立參數需要按各模組 schema 編碼：
 
 ```solidity
@@ -532,9 +545,7 @@ OpenFourTypes.TokenInitParams({
     migrateParams: abi.encode(FairLaunchMigrateInput({
         softCap: 40 ether,
         duration: 7 days,
-        migrationAdapter: address(0),
-        lpRecipient: address(0),
-        tokenLiquidityAmount: 0,
+        tokenLiquidityAmount: 0, // 0 = maxSupply - sold
         maxQuoteToUse: 0
     })),
     customDataParams: ""
@@ -568,6 +579,8 @@ Registry 註冊時需要提供模組類型、實現標識、實現地址或 beac
 
 Preset 註冊同樣由 OpenFour 官方/治理方執行。第三方開發者可以提出新 Preset 方案，包括模組組合、玩法說明、參數約束、validator 規則、遷移目標、風險說明和前端展示資訊；官方審核通過後，再將 Preset 寫入 Registry。
 
+若 Preset 需要超出共用建立 / 交易介面的**額外前端頁面**，開發者須使用 `developer/frontend-style/`（對齊官方網站樣式）自行搭建臨時頁，並與審計材料一併提交。臨時頁僅供 fork 演示與審核參考；通過後由 OpenFour **參考該頁並自行移植**到官網，不會把開發者原始臨時頁直接上線，社群開發者也不以自有主機作為正式 Preset UI。
+
 Preset 是一組模組和 token implementation 的組合。一個 Preset 通常包含：
 
 - token implementation id
@@ -595,10 +608,10 @@ Preset 狀態語義：
 
 Validator 用於在建立階段校驗跨模組參數關係。
 
-`contracts/` 提供了兩個 validator 參考檔案：
+Validator 參考：
 
 - `contracts/interfaces/IOpenFourPresetValidator.sol`
-- `contracts/validators/FairLaunchPresetValidator.sol`
+- `developer/startup/contracts/validators/FairLaunchPresetValidator.sol`
 
 單個模組的 `init` 只能校驗自己的 params；Validator 可以校驗整體組合，例如：
 
@@ -632,8 +645,9 @@ Validator 只能校驗建立參數本身。Preset 是否真的綁定了某個 cu
 3. 如果交易規則不變，複用 `FairLaunchTradeModule`；如果需要白名單或冷卻時間，再增加 CustomDataModule 並讓 TradeModule 讀取它。
 4. 複用或替換 `FairLaunchMigrateModule`，取決於畢業條件和外部流動性目標是否變化。
 5. 寫 `StepLaunchPresetValidator`，校驗階梯價格陣列、saleAmount、raiseAmount、softCap、交易限制之間的關係。
-6. 給新 curve module 準備 `descriptor()` tag、schema、metadata、測試和審計材料。
-7. 在官網提交合約程式碼和相關描述資訊，等待後續審核。
+6. 複製 `developer/startup/presets/fairlaunch.json`，把被替換的槽位指向新合約，然後用 `PRESET=<id> npx hardhat run scripts/register.js` 登記到自己的 fork。
+7. 給新 curve module 準備 `descriptor()` tag、schema、metadata、測試和審計材料。
+8. 在官網提交合約程式碼和相關描述資訊，等待後續審核。
 
 ## 21. 安全檢查清單
 
@@ -657,7 +671,7 @@ Curve：
 
 Trade：
 
-- 普通拒絕返回 `allowed = false`。
+- 普通拒絕返回 `allowed = false`，並帶上自訂 error 的 `revertData`（`abi.encodeWithSelector`），不要直接 revert。
 - fee bps 有上限。
 - fee recipient 非零。
 - view-only，不寫狀態。
