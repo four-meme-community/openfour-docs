@@ -1,0 +1,200 @@
+/**
+ * Minimal official-website-aligned base styles for temporary preset pages.
+ * Import after tokens.css. Keep the temporary UI small; production UI is ported by OpenFour.
+ */
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid rgba(var(--of-brand-rgb), 0.28);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--of-bg);
+  color: var(--of-muted);
+  font-family: var(--of-font);
+  overscroll-behavior: none;
+}
+
+a {
+  color: var(--of-brand);
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.9;
+}
+
+.of-page {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--of-bg);
+  color: var(--of-muted);
+}
+
+.of-main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.of-panel {
+  background: var(--of-surface);
+  border: 1px solid var(--of-border-strong);
+  border-radius: var(--of-radius-lg);
+  padding: 18px;
+}
+
+.of-panel-brand {
+  border-top: 1px solid transparent;
+  border-image: var(--of-brand-line) 1;
+}
+
+.of-title {
+  margin: 0 0 8px;
+  color: var(--of-text);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.of-lede {
+  margin: 0 0 20px;
+  color: var(--of-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.of-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--of-muted);
+}
+
+.of-input,
+.of-select,
+.of-textarea {
+  width: 100%;
+  height: var(--of-input-h);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--of-text);
+  border: 1px solid var(--of-border);
+  background: var(--of-surface);
+  border-radius: var(--of-radius);
+  padding: 0 16px;
+  color-scheme: dark;
+}
+
+.of-textarea {
+  height: 120px;
+  padding-top: 12px;
+  resize: vertical;
+}
+
+.of-input::placeholder,
+.of-textarea::placeholder {
+  color: var(--of-placeholder);
+}
+
+.of-input:hover:not(:focus),
+.of-select:hover:not(:focus),
+.of-textarea:hover:not(:focus) {
+  border-color: rgba(var(--of-brand-rgb), 0.5);
+}
+
+.of-input:focus,
+.of-select:focus,
+.of-textarea:focus {
+  border-color: var(--of-brand);
+  box-shadow:
+    var(--of-focus-ring),
+    inset 0 1px 0 rgba(var(--of-brand-rgb), 0.05);
+}
+
+.of-input[data-status="error"] {
+  border-color: var(--of-danger);
+  box-shadow: 0 0 0 3px rgba(255, 74, 50, 0.12);
+}
+
+.of-input[data-status="success"] {
+  border-color: var(--of-brand);
+  box-shadow: 0 0 0 3px rgba(var(--of-brand-rgb), 0.08);
+}
+
+.of-input[data-status="warning"] {
+  border-color: var(--of-warn);
+  box-shadow: 0 0 0 3px rgba(255, 175, 16, 0.12);
+}
+
+.of-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: var(--of-radius);
+  border: 1px solid var(--of-border);
+  background: var(--of-surface);
+  color: var(--of-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.of-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.of-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.of-btn-primary {
+  border: 0;
+  color: #111111;
+  background: var(--of-brand-gradient);
+  box-shadow: 0 0 12px rgba(var(--of-brand-rgb), 0.3);
+}
+
+.of-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 28px rgba(var(--of-brand-rgb), 0.65),
+    0 0 8px rgba(196, 255, 173, 0.4);
+}
+
+.of-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.of-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 720px) {
+  .of-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .of-input,
+  .of-select,
+  .of-textarea {
+    font-size: 14px;
+    padding-left: 12px;
+  }
+}

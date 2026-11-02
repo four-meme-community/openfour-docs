@@ -12,10 +12,6 @@ struct TradeEstimate {
     uint256 executionPrice; // unit price (curveQuote * 1e18 / amount)
 }
 
-/// @notice Public helpers for token creation schemas, tags, liquidity snapshots, and trade estimates.
-/// @dev Trade-estimate functions are intentionally non-view because native zap estimates may call
-///      a V3 quoter whose interface is non-view. Off-chain ethers v6 clients must invoke them with
-///      `method.staticCall(...)` (ethers v5: `contract.callStatic.method(...)`).
 interface IOpenFourTools {
     function getCreateTokenSigningPayload(
         address caller,
@@ -30,25 +26,21 @@ interface IOpenFourTools {
     ) external view returns (bytes memory);
 
     /// @param options bit1 converts quote-denominated `userPays` into the native input required by exact-output.
-    /// @dev With bit1, `curveQuote` and `totalFee` remain quote-denominated while `userPays` is
-    ///      native-denominated. Use an off-chain static call even when bit1 is not set.
+    /// @dev With bit1, `curveQuote` and `totalFee` remain quote-denominated while `userPays` is native-denominated.
     function estimateBuy(address token, address trader, uint256 amount, uint256 options, bytes calldata proof)
         external returns (TradeEstimate memory);
 
     /// @param options bit1 converts non-WBNB quote through ZapRouter; bit0+bit1 keeps WBNB,
     ///        while bit1 alone unwraps to BNB. Both have the same numeric `userReceives`.
-    /// @dev Non-view because a configured V3 Quoter may be non-view. Off-chain clients must use
-    ///      a static call even when bit1 is not set.
+    /// @dev Non-view when bit1 is used because a configured V3 Quoter may be non-view.
     function estimateSell(address token, address trader, uint256 amount, uint256 options, bytes calldata proof)
         external returns (TradeEstimate memory);
 
     /// @notice Given a spend budget—or a native BNB budget when options bit1 is set—return how many tokens can be bought.
     /// @dev With bit1, the input and `userPays` are native-denominated; `curveQuote` and `totalFee`
-    ///      remain quote-denominated. For the current Core native-zap execution, pass native value
-    ///      through `msg.value` and use `curveQuote + totalFee` as Core's quote-denominated
-    ///      `buyByBudget.maxPayAmount`.
-    ///      This function is non-view because a configured V3 Quoter may be non-view; off-chain
-    ///      clients must use a static call even when bit1 is not set.
+    ///      remain quote-denominated. Core's `buyByBudget.maxPayAmount` uses the same unit as this
+    ///      `maxPayAmount` (native when bit1, otherwise vault quote).
+    ///      Non-view when bit1 is used because a configured V3 Quoter may be non-view.
     /// @param maxPayAmount Spend budget. Unit follows `options` (vault quote, or native when bit1 zap).
     function estimateBuyByBudget(
         address token,

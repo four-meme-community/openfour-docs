@@ -1,0 +1,26 @@
+{
+  "name": "openfour-startup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FairLaunch preset starter. Hardhat + solc 0.8.24, no OpenFour Core source.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:impl": "hardhat run scripts/deploy-implementations.js",
+    "register": "hardhat run scripts/register.js",
+    "register:fairlaunch": "hardhat run scripts/register-fairlaunch.js",
+    "create-trade": "hardhat run scripts/create-and-trade.js",
+    "new-module": "hardhat run scripts/new-module.js",
+    "pack": "hardhat run scripts/pack-submit.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "solc": "0.8.24"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "4.9.6",
+    "@openzeppelin/contracts-upgradeable": "4.9.6",
+    "dotenv": "^17.4.1"
+  }
+}

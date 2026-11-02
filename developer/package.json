@@ -1,0 +1,22 @@
+{
+  "name": "openfour-developer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenFour developer workspace: startup, fork-deploy, workbench.",
+  "workspaces": [
+    "startup",
+    "fork-deploy",
+    "workbench"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "fork": "npm run fork -w openfour-fork-deploy",
+    "fork:dry": "npm run fork:dry -w openfour-fork-deploy",
+    "compile": "npm run compile -w openfour-startup",
+    "test": "npm run test -w openfour-startup",
+    "register": "npm run register -w openfour-startup",
+    "create-trade": "npm run create-trade -w openfour-startup",
+    "pack": "npm run pack -w openfour-startup",
+    "workbench": "npm run dev -w openfour-developer-workbench"
+  }
+}

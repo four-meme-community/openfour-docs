@@ -2,7 +2,7 @@
 
 [English](./developer-guide.md) | [繁體中文](./zh-Hant/developer-guide.md)
 
-This guide is for developers who want to build new launch mechanics, new Presets, new modules, or new token types on top of OpenFour. OpenFour is Four.Meme's modular launch engine. This document explains the OpenFour module architecture, module relationships, required interfaces, development boundaries, schema design, Preset registration points, and how to use the FairLaunch example in this directory as a starting point for a custom launch.
+This guide is for developers who want to build new launch mechanics, new Presets, new modules, or new token types on top of OpenFour. OpenFour is Four.Meme's modular launch engine. This document explains the OpenFour module architecture, module relationships, required interfaces, development boundaries, schema design, Preset registration points, and how to use the FairLaunch starter in [`developer/startup/`](../developer/startup/) as a starting point for a custom launch.
 
 The example contracts are only for demos and development reference. They are not audited and must not be used for any other formal production purpose.
 
@@ -145,18 +145,22 @@ Typical migration order:
 
 Hook data returned by `evaluate()` can only be used as a hint. `executeMigration()` must revalidate conditions, token, caller, and amount caps.
 
-## 5. FairLaunch Example Structure
+## 5. FairLaunch Example
 
-This directory provides a FairLaunch demo:
+The FairLaunch example is the Hardhat starter at [`developer/startup/`](../developer/startup/). That README covers the module split, launch flow, compile/test commands, and how to replace a slot. This guide keeps the protocol rules; the starter keeps the runnable code.
 
-- `contracts/modules/token/StandardTokenModule.sol`
-- `contracts/token/OpenFourToken.sol`
-- `contracts/modules/vault/StandardVault.sol`
-- `contracts/modules/curve/FairLaunchCurveModule.sol`
-- `contracts/modules/trade/FairLaunchTradeModule.sol`
-- `contracts/modules/data/FairLaunchCustomDataModule.sol`
-- `contracts/modules/migrate/FairLaunchMigrateModule.sol`
-- `contracts/validators/FairLaunchPresetValidator.sol`
+To register the example on a developer-owned fork and run one create / buy / sell loop, use `developer/startup/scripts/register.js` then `create-and-trade.js` with `PRESET=fairlaunch`. For a new preset, copy `developer/startup/presets/fairlaunch.json` and edit that file only — do not copy the JS scripts. `create-and-trade.js` encodes params from the on-chain schema. Do not write the official Registry.
+
+`developer/startup` includes:
+
+- `developer/startup/contracts/modules/token/StandardTokenModule.sol`
+- `developer/startup/contracts/token/OpenFourToken.sol` (also published under repo-root `contracts/token/` so other token types can inherit it)
+- `developer/startup/contracts/modules/vault/StandardVault.sol`
+- `developer/startup/contracts/modules/curve/FairLaunchCurveModule.sol`
+- `developer/startup/contracts/modules/trade/FairLaunchTradeModule.sol`
+- `developer/startup/contracts/modules/data/FairLaunchCustomDataModule.sol`
+- `developer/startup/contracts/modules/migrate/FairLaunchMigrateModule.sol`
+- `developer/startup/contracts/validators/FairLaunchPresetValidator.sol`
 
 FairLaunch mechanics:
 
@@ -166,7 +170,7 @@ FairLaunch mechanics:
 - Trade module can limit per-buy amount, cumulative buys, sell amount, and extra fees.
 - Custom data module records cumulative buys/sells for the trade module to read.
 - Migrate module allows migration when sold out, soft cap is reached, or the launch expires.
-- Migration can execute external DEX liquidity creation through an adapter, or skip on-chain liquidity actions.
+- Migration adds liquidity to an empty Pancake V2 pair on BSC / BSC Testnet (same public path as official PCS V2 migrate). Other chains skip the pool.
 
 ## 6. Developing a New Preset
 
@@ -245,7 +249,7 @@ Core functions:
 - `minAmount`
 - `maxAmount`
 - `FeeTier[] fees`
-- `reason`
+- `revertData` (ABI-encoded revert payload when `allowed` is false; empty when allowed)
 
 Implementation requirements:
 
@@ -253,7 +257,35 @@ Implementation requirements:
 - If cumulative purchases, cooldowns, whitelist usage counts, or similar state are needed, put that state in CustomDataModule.
 - It can read view state from token, vault, or customData to assist decisions.
 - FeeTier `bps` should have an upper bound, and fee recipients should be validated as non-zero.
-- When a rule is exceeded, return `allowed = false`; do not use revert for ordinary business rejection.
+- When a rule is exceeded, return `allowed = false` with `revertData`. Do not `revert` for ordinary business rejection. `evaluate` stays view-only; Core later calls `OpenFourTypes.revertIfDisallowed`, which bubbles `revertData` unchanged.
+
+### Returning `revertData`
+
+Prefer a custom `error Xxx(...)` encoded the same way as `revert Xxx(args)`:
+
+```solidity
+error FairTradeMissingCustomData(address token);
+error FairTradeCumulativeBuyLimit(address trader, uint256 purchased, uint256 maxPerAddress);
+
+if (customData == address(0)) {
+    return OpenFourTypes.TradeResult({
+        allowed: false,
+        minAmount: 0,
+        maxAmount: 0,
+        fees: new OpenFourTypes.FeeTier[](0),
+        revertData: abi.encodeWithSelector(FairTradeMissingCustomData.selector, ctx.token)
+    });
+}
+```
+
+Rules:
+
+- `revertData` is selector + ABI-encoded arguments. That is the same payload wallets see after Core bubbles it.
+- When `allowed` is true, `revertData` must be empty (`""` / `0x`).
+- `Error(string)` via `abi.encodeWithSignature("Error(string)", reason)` is also valid, but custom errors are preferred: they are typed, cheaper, and tests can use `revertedWithCustomError`.
+- Do not `revert FairTradeMissingCustomData(...)` inside `evaluate`. Return the encoded payload so Core can apply it after its own checks.
+
+Reference: `developer/startup/contracts/modules/trade/FairLaunchTradeModule.sol`.
 
 ## 9. CustomDataModule Development Rules
 
@@ -356,27 +388,6 @@ Token extensions are suitable for:
 - Creator rewards.
 - On-chain metadata / NFT-like rendering.
 - Special restrictions after external market migration.
-
-### 12.1 UniToken Renderer
-
-`contracts/interfaces/IUniTokenRenderer.sol` defines the renderer interface used by Uni-style token mechanics.
-
-The renderer is an external contract that receives a badge/token id and the stored seed for that badge, then returns a complete `tokenURI` string:
-
-```solidity
-function tokenURI(uint256 tokenId, uint256 seed) external view returns (string memory);
-```
-
-Typical usage:
-
-- A UniToken-compatible token stores or derives a deterministic `seed` for each badge/token id.
-- When metadata is requested, the token delegates rendering to a renderer contract.
-- The renderer returns a full metadata URI, usually `data:application/json;base64,...`.
-- The JSON `image` field can contain an on-chain SVG, base64 image, or another supported media URI.
-
-Custom renderers used at token creation must implement ERC-165 and return `true` for `type(IUniTokenRenderer).interfaceId`. The preset default renderer is trusted by the protocol and may skip this external renderer interface check.
-
-Use a custom renderer when the token mechanic needs on-chain art, dynamic metadata, generative badge visuals, or a project-specific display layer without changing the core token/module interfaces.
 
 ## 13. Module Schema
 
@@ -500,6 +511,8 @@ OpenFourTypes.Preset({
 
 If the launch mechanic does not need post-trade state, `customDataId` can be `bytes32(0)`. In the FairLaunch example, however, when `FairLaunchTradeModule.maxPerAddress > 0`, TradeModule needs to read cumulative purchases, so the Preset must configure `FairLaunchCustomDataModule`.
 
+To register this composition on a fork, copy `developer/startup/presets/fairlaunch.json` and set the slot `contract` / `keySource` values to match the ids above. Then run `PRESET=<id> npx hardhat run scripts/register.js`. The JS scripts stay generic.
+
 Creation parameters need to be encoded according to each module schema:
 
 ```solidity
@@ -532,9 +545,7 @@ OpenFourTypes.TokenInitParams({
     migrateParams: abi.encode(FairLaunchMigrateInput({
         softCap: 40 ether,
         duration: 7 days,
-        migrationAdapter: address(0),
-        lpRecipient: address(0),
-        tokenLiquidityAmount: 0,
+        tokenLiquidityAmount: 0, // 0 = maxSupply - sold
         maxQuoteToUse: 0
     })),
     customDataParams: ""
@@ -568,6 +579,8 @@ Module metadata should describe:
 
 Preset registration is also performed by OpenFour officials/governance. Third-party developers can propose a new Preset, including module composition, launch mechanic description, parameter constraints, validator rules, migration target, risk notes, and frontend display information. After approval, the Preset is written into Registry.
 
+If the Preset needs **extra frontend pages** beyond the shared create / trade UI, developers must build a temporary page using the official-website style pack in `developer/frontend-style/` and submit it with the audit materials. Temporary pages are for fork demos and review only. After approval, OpenFour uses them as reference and **ports** the needed flows into the official website; the developer's original temporary page is not shipped as-is, and community developers do not host production preset UI.
+
 A Preset is a composition of modules and token implementation. A Preset usually contains:
 
 - token implementation id
@@ -595,10 +608,10 @@ Preset state semantics:
 
 Validator checks cross-module parameter relationships during creation.
 
-`contracts/` provides two validator reference files:
+Validator references:
 
 - `contracts/interfaces/IOpenFourPresetValidator.sol`
-- `contracts/validators/FairLaunchPresetValidator.sol`
+- `developer/startup/contracts/validators/FairLaunchPresetValidator.sol`
 
 A single module's `init` can only validate its own params. Validator can validate the whole composition, for example:
 
@@ -632,8 +645,9 @@ For example, to turn FairLaunch into a "step-price launch":
 3. If trading rules are unchanged, reuse `FairLaunchTradeModule`; if whitelist or cooldown is needed, add CustomDataModule and let TradeModule read it.
 4. Reuse or replace `FairLaunchMigrateModule`, depending on whether graduation conditions and external liquidity targets change.
 5. Write `StepLaunchPresetValidator` to validate relationships among the step-price array, saleAmount, raiseAmount, softCap, and trading limits.
-6. Prepare `descriptor()` tag, schema, metadata, tests, and audit materials for the new curve module.
-7. Submit contract code and related description on the official website for later review.
+6. Copy `developer/startup/presets/fairlaunch.json` and point the changed slot at the new contract. Register with `PRESET=<id> npx hardhat run scripts/register.js`.
+7. Prepare `descriptor()` tag, schema, metadata, tests, and audit materials for the new curve module.
+8. Submit contract code and related description on the official website for later review.
 
 ## 21. Security Checklist
 
@@ -657,7 +671,7 @@ Curve:
 
 Trade:
 
-- Ordinary rejection returns `allowed = false`.
+- Ordinary rejection returns `allowed = false` with custom-error `revertData` (`abi.encodeWithSelector`), not a revert.
 - fee bps has an upper bound.
 - fee recipient is non-zero.
 - view-only and does not write state.

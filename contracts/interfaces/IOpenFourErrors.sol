@@ -5,6 +5,10 @@ pragma solidity ^0.8.20;
 /// @notice Canonical custom errors for OpenFour (single ABI surface for off-chain selector decoding).
 interface IOpenFourErrors {
     error CoreErrZeroRegistry();
+    /// @dev Protected mainnet implementations must be bound to an official proxy.
+    error CoreErrZeroOfficialProxy();
+    /// @dev Implementation was deployed for one proxy; `address(this)` is a different proxy.
+    error CoreErrUnauthorizedProxy();
     error CoreErrZeroWrappedNative();
     error CoreErrZeroFeeRouter();
     error CoreErrZeroToken();
@@ -60,4 +64,5 @@ interface IOpenFourErrors {
     error LikwidMigrateErrWrongToken();
     error LikwidMigrateErrZeroVaultBalance();
     error LikwidMigrateErrNoTokenLiquidity();
+
 }

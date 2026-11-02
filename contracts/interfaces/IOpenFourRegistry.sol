@@ -29,9 +29,11 @@ interface IOpenFourRegistry {
     function openFourTool() external view returns (address);
     function createDeployer() external view returns (address);
     function taxVaultRegistry() external view returns (address);
+    function taxStrategyRegistry() external view returns (address);
     function uniTokenV4HookImpl() external view returns (address);
 
     function getPreset(uint256 presetId) external view returns (OpenFourTypes.Preset memory);
+
     function resolvePresetImplementations(uint256 presetId)
         external
         view
@@ -44,15 +46,25 @@ interface IOpenFourRegistry {
             address migrateModule,
             address customDataModule
         );
+
     function getPresetTokenImpl(uint256 presetId) external view returns (address);
     function getTokenImpl(bytes32 tokenImplId) external view returns (TokenImplRecord memory);
     function getModule(bytes32 moduleKey) external view returns (ModuleRecord memory);
-    function getModuleBeacon(bytes32 moduleKey) external view returns (address);
-    function getModuleImplementation(bytes32 moduleKey) external view returns (address);
+
     function getPresetIdsCount() external view returns (uint256);
     function getPresetIdsByBatch(uint256 index, uint256 count) external view returns (uint256[] memory);
     function getPresetIds() external view returns (uint256[] memory);
+
     function isPresetActive(uint256 presetId) external view returns (bool);
     function isPresetCreateEnabled(uint256 presetId) external view returns (bool);
+
+    /// @notice Returns the UpgradeableBeacon address for a module key (zero if not registered).
+    function getModuleBeacon(bytes32 moduleKey) external view returns (address);
+
+    /// @notice Returns the current implementation address behind a module key's beacon.
+    function getModuleImplementation(bytes32 moduleKey) external view returns (address);
+
+    /// @notice Canonical UTF-8 `tag` registered for `tagId` (`bytes8(keccak256(bytes(tag)))`).
+    /// @dev Empty string if `tagId` has never been registered via module/token implementation upsert.
     function tagOf(bytes8 tagId) external view returns (string memory);
 }

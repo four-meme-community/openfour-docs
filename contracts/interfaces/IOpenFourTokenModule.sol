@@ -4,7 +4,10 @@ pragma solidity ^0.8.20;
 import {ITagDescriptor} from "./ITagDescriptor.sol";
 import {OpenFourTypes} from "../libraries/OpenFourTypes.sol";
 
+/// @dev `descriptor`: per-token **module** BeaconProxy — `module.token.*` tag + `ModuleMetadata.version` snapshot (ERC20 clone uses `token.*` + `TokenImplRecord.version`).
 interface IOpenFourTokenModule is ITagDescriptor {
+    /// @param tokenImplVersion Registry `TokenImplRecord.version` snapshot on the cloned token (`IOpenFourToken.descriptor().version`).
+    /// @param tokenModuleVersion Registry `ModuleMetadata.version` snapshot on this module proxy (`IOpenFourTokenModule.descriptor().version`).
     function createToken(
         address creator,
         address token,

@@ -1,0 +1,83 @@
+{
+  "id": "fairlaunch",
+  "name": "FairLaunch",
+  "description": "Startup FairLaunch example: fixed price, optional sell, timeout migrate",
+  "version": "1.0.0",
+  "validator": {
+    "contract": "FairLaunchPresetValidator",
+    "args": [
+      {
+        "expectedPresetId": 0,
+        "requiredQuoteAsset": "0x0000000000000000000000000000000000000000",
+        "minSaleAmount": 0,
+        "maxSaleAmount": 0,
+        "maxRaiseAmount": 0
+      }
+    ]
+  },
+  "tokenImpl": {
+    "reuse": "fork"
+  },
+  "modules": {
+    "token": {
+      "contract": "StandardTokenModule",
+      "keySource": "module.token.standard",
+      "reuse": true
+    },
+    "vault": {
+      "contract": "StandardVault",
+      "keySource": "module.vault.standard",
+      "reuse": true
+    },
+    "curve": {
+      "contract": "FairLaunchCurveModule",
+      "keySource": "module.curve.fair_launch"
+    },
+    "trade": {
+      "contract": "FairLaunchTradeModule",
+      "keySource": "module.trade.fair_launch"
+    },
+    "migrate": {
+      "contract": "FairLaunchMigrateModule",
+      "keySource": "module.migrate.fair_launch"
+    },
+    "customData": {
+      "contract": "FairLaunchCustomDataModule",
+      "keySource": "module.data.fair_launch"
+    }
+  },
+  "create": {
+    "name": "FairLaunch Demo",
+    "symbol": "FLDM",
+    "tokenUri": "",
+    "maxSupply": "1000000",
+    "saleAmount": "800000",
+    "raiseAmount": "80",
+    "curve": {
+      "fixedPrice": "0.0001",
+      "sellPenaltyBps": "500",
+      "enableSell": true,
+      "minPurchase": "1000000000000000000",
+      "maxPurchase": "10000000000000000000000"
+    },
+    "trade": {
+      "maxBuyAmount": "10000000000000000000000",
+      "maxPerAddress": "0",
+      "maxSellAmount": "5000000000000000000000",
+      "buyFeeBps": "0",
+      "sellFeeBps": "0",
+      "feeRecipient": "0x0000000000000000000000000000000000000000"
+    },
+    "migrate": {
+      "softCap": "0",
+      "duration": "604800",
+      "tokenLiquidityAmount": "200000000000000000000000",
+      "maxQuoteToUse": "0"
+    }
+  },
+  "loop": {
+    "buyAmount": "1",
+    "sellAmount": "0.5",
+    "sell": true
+  }
+}
