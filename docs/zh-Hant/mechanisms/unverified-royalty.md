@@ -255,6 +255,7 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 
 ## 5. 延伸閱讀
 
+- Token 實作：[`contracts/token/TaxToken.sol`](../../../contracts/token/TaxToken.sol)
 - [TaxToken 稅費機制](./tax-token.md)
 - [開發文件 §25](../developer-guide.md#25-開發未驗證版稅-taxvault-模板)
 - [Fork deploy（預設 Bonding + Bonding Tax）](../../../developer/fork-deploy/README.md)

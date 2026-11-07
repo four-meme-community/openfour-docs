@@ -107,10 +107,10 @@ Default fork input is `developer/fork-deploy/source/bsctestnet.json`. Fork your 
 
 After fork, create immediately in Workbench:
 
-| Preset | Use |
-| --- | --- |
-| **Bonding V1** | Standard bonding create / trade smoke test |
-| **Bonding Tax V1** | TaxToken + Royalty; develop/test unverified `ForwardVault` templates |
+| Preset | Token | Vault / Trade | Use |
+| --- | --- | --- | --- |
+| **Bonding V1** | [`OpenFourToken.sol`](../../../contracts/token/OpenFourToken.sol) | [`StandardVault`](../../../contracts/modules/vault/StandardVault.sol) · [`SimpleTradeModule`](../../../contracts/modules/trade/SimpleTradeModule.sol) | Standard bonding create / trade smoke test |
+| **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | [`TaxBondingVault`](../../../contracts/modules/vault/TaxBondingVault.sol) · [`TaxBondingTradeModule`](../../../contracts/modules/trade/TaxBondingTradeModule.sol) | TaxToken + Royalty; develop/test unverified `ForwardVault` templates |
 
 Royalty template flow: implement under `contracts/taxvault/` → deploy template → Create with Bonding Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and `abi.encode(template, initData)` → buy to exercise the 6%/94% split. Step-by-step: [`developer/fork-deploy/README.md`](../../fork-deploy/README.md) and [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md).
 

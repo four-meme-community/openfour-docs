@@ -255,6 +255,7 @@ After create: `token.founder()` = ForwardVault; `clonedVault()` = template clone
 
 ## 5. Further reading
 
+- Token implementation: [`contracts/token/TaxToken.sol`](../../contracts/token/TaxToken.sol)
 - [TaxToken tax mechanism](./tax-token.md)
 - [Developer Guide §25](../developer-guide.md#25-developing-an-unverified-royalty-taxvault-template)
 - [Fork deploy (bundled Bonding + Bonding Tax presets)](../../developer/fork-deploy/README.md)

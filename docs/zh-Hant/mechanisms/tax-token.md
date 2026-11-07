@@ -2,7 +2,7 @@
 
 [English](../../mechanisms/tax-token.md) | [繁體中文](./tax-token.md)
 
-本文說明 OpenFour `TaxToken` 如何收取、轉換及分配稅費，並介紹 holder reward 手動注資、keeper 入口和 gas 行為。
+本文說明 OpenFour `TaxToken` 如何收取、轉換及分配稅費，並介紹 holder reward 手動注資、keeper 入口和 gas 行為。參考實作：[`contracts/token/TaxToken.sol`](../../../contracts/token/TaxToken.sol)。
 
 ## 1. 身份與配置
 

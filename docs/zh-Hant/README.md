@@ -24,6 +24,7 @@ OpenFour 是 Four.Meme 推出的全新模組化 launch 引擎，為開發者提�
 - `contracts/interfaces/`：自訂模組需要實作或引用的協議介面。
 - `contracts/libraries/OpenFourTypes.sol`：Core、模組、工具和 UI 共用的資料結構。
 - `contracts/token/`：`OpenFourToken`、`TaxToken`、`StrategyTaxToken` 等 token implementation 的公開參考源碼。
+- `contracts/modules/`：預設 Bonding / Bonding Tax 模組參考——`vault/`（`StandardVault`、`TaxBondingVault`）、`trade/`（`SimpleTradeModule`、`TaxBondingTradeModule`）、`data/`（`StandardCustomData`）。
 - `contracts/taxstrategy/ITaxStrategy.sol`：每 token strategy-tax 接入使用的公開介面。
 - `contracts/taxvault/`：供自訂版稅模板使用的公開 TaxVault 介面、`BaseTaxVault` 基礎合約，以及平台 `ForwardVault` 包裝器。
 - `scripts/`：用於 create 參數編碼、schema 解析、鏈上提交、ABI 同步和 encoded tag 解析的 JavaScript helper 與示例。

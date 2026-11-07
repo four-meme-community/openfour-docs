@@ -38,6 +38,7 @@ The `contracts/` directory publishes interfaces and token references. FairLaunch
 - `contracts/interfaces/`: protocol interfaces used or implemented by custom modules.
 - `contracts/libraries/OpenFourTypes.sol`: shared data structures used by Core, modules, tools, and UIs.
 - `contracts/token/`: public reference source for `OpenFourToken`, `TaxToken`, `StrategyTaxToken`, and other token implementations.
+- `contracts/modules/`: public module references for the bundled Bonding / Bonding Tax presets — `vault/` (`StandardVault`, `TaxBondingVault`), `trade/` (`SimpleTradeModule`, `TaxBondingTradeModule`), `data/` (`StandardCustomData`).
 - `contracts/taxstrategy/ITaxStrategy.sol`: public interface for per-token strategy-tax integrations.
 - `contracts/taxvault/`: public TaxVault interface, `BaseTaxVault` base contract, and platform `ForwardVault` wrapper for custom royalty templates.
 - `scripts/`: JavaScript helpers and examples for create-argument encoding, schema resolution, on-chain submission, ABI sync, and encoded tag parsing.

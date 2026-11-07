@@ -2,7 +2,7 @@
 
 [English](./tax-token.md) | [繁體中文](../zh-Hant/mechanisms/tax-token.md)
 
-This document explains how OpenFour `TaxToken` collects, converts, distributes, and exposes tax revenue. It also describes manual holder-reward funding, keeper entry points, and gas behavior.
+This document explains how OpenFour `TaxToken` collects, converts, distributes, and exposes tax revenue. It also describes manual holder-reward funding, keeper entry points, and gas behavior. Reference implementation: [`contracts/token/TaxToken.sol`](../../contracts/token/TaxToken.sol).
 
 ## 1. Identity and Configuration
 

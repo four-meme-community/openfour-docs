@@ -6,10 +6,12 @@ Creates a developer-owned OpenFour proxy set on BSC Testnet from the bundled add
 
 Two example presets are copied onto **your** Registry by default:
 
-| Key in `fork.json` | Preset id | Role |
-| --- | --- | --- |
-| `presets.bondingV1` | `1778027615722` | Standard bonding create / buy / sell / migrate |
-| `presets.bondingTaxV1` | `1778027615723` | TaxToken bonding + Royalty path for unverified `ForwardVault` templates |
+| Key in `fork.json` | Preset id | Token | Vault / Trade (reference) | Role |
+| --- | --- | --- | --- | --- |
+| `presets.bondingV1` | `1778027615722` | [`OpenFourToken.sol`](../../contracts/token/OpenFourToken.sol) | [`StandardVault`](../../contracts/modules/vault/StandardVault.sol) · [`SimpleTradeModule`](../../contracts/modules/trade/SimpleTradeModule.sol) | Standard bonding create / buy / sell / migrate |
+| `presets.bondingTaxV1` | `1778027615723` | [`TaxToken.sol`](../../contracts/token/TaxToken.sol) | [`TaxBondingVault`](../../contracts/modules/vault/TaxBondingVault.sol) · [`TaxBondingTradeModule`](../../contracts/modules/trade/TaxBondingTradeModule.sol) | TaxToken bonding + Royalty path for unverified `ForwardVault` templates |
+
+Shared blank custom-data slot (when used): [`StandardCustomData.sol`](../../contracts/modules/data/StandardCustomData.sol).
 
 Modules copied when present on the source Registry:
 
@@ -53,8 +55,8 @@ After `fork.json` is imported, both presets are create-ready (no extra `register
 
 1. Start Workbench: `cd developer && npm run workbench`
 2. Open **Create**, pick a preset from the fork list:
-   - **Bonding V1** — standard OpenFourToken bonding demo
-   - **Bonding Tax V1** — TaxToken bonding; use this for Royalty / ForwardVault
+   - **Bonding V1** — [`OpenFourToken`](../../contracts/token/OpenFourToken.sol) + [`StandardVault`](../../contracts/modules/vault/StandardVault.sol) + [`SimpleTradeModule`](../../contracts/modules/trade/SimpleTradeModule.sol)
+   - **Bonding Tax V1** — [`TaxToken`](../../contracts/token/TaxToken.sol) + [`TaxBondingVault`](../../contracts/modules/vault/TaxBondingVault.sol) + [`TaxBondingTradeModule`](../../contracts/modules/trade/TaxBondingTradeModule.sol); use for Royalty / ForwardVault
 3. Fill schema fields from `OpenFourTools.getPresetEncodeSchemas(presetId)`, sign as `Core.signer` (fork deployer by default), then create.
 4. Use **Tokens** for buy / sell / migrate checks. Records append to `workbench/data/tokens.json`.
 
