@@ -786,6 +786,7 @@ Third-party integrators rely on this information for UI, indexing, trade routing
 ## 25. Developing an Unverified Royalty TaxVault Template
 
 > Mechanism overview (recommended first read): [Unverified Royalty (`ForwardVault`)](./mechanisms/unverified-royalty.md).
+> Developer fork testing: after `developer/fork-deploy`, use the bundled **Bonding Tax V1** preset with ForwardVault — see [`developer/fork-deploy/README.md`](../developer/fork-deploy/README.md).
 
 OpenFour Royalty mode lets a creator use an unverified TaxVault implementation through the platform `ForwardVault` wrapper. Reference implementations: BSC [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code), Robinhood [`0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C`](https://robin.etherscan.io/address/0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C). This path does not mean the submitted template has been reviewed, audited, registered, or endorsed by OpenFour.
 

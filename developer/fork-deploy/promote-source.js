@@ -1,10 +1,9 @@
 /**
- * Promote out/fork-deployment.json into the default developer source list.
+ * INTERNAL ONLY — not part of the public developer workflow.
+ * Do not document or expose this command in community docs.
  *
- *   npm run promote-source
- *   npm run promote-source -- ./out/fork-deployment.json
- *
- * Writes source/bsctestnet.json (slim addresses + moduleIds + preset).
+ * Writes source/bsctestnet.json from a fork-deployment.json.
+ * Not registered in package.json scripts.
  */
 "use strict";
 
@@ -26,24 +25,33 @@ function main() {
   if (!full.moduleIds?.TOKEN_STANDARD) throw new Error(`missing moduleIds in ${inPath}`);
   if (!full.presets?.bondingV1) throw new Error(`missing presets.bondingV1 in ${inPath}`);
 
+  const addresses = {
+    registry: A.registry,
+    feeRouter: A.feeRouter,
+    core: A.core,
+    createDeployer: A.createDeployer,
+    tools: A.tools,
+  };
+  if (A.taxVaultRegistry) addresses.taxVaultRegistry = A.taxVaultRegistry;
+  if (A.forwardVaultImpl) addresses.forwardVaultImpl = A.forwardVaultImpl;
+
+  const presets = {};
+  for (const [key, id] of Object.entries(full.presets)) {
+    presets[key] = String(id);
+  }
+
   const out = {
     role: "developer-source",
     network: full.network || "bsctestnet",
     chainId: full.chainId || 97,
     note:
-      "Shared developer hub. Default SOURCE_DEPLOYMENT for fork-deploy. Fork your own proxy set before registering modules unless you own this Registry.",
+      "Default fork-deploy source. Includes Bonding V1 and Bonding Tax V1 (Royalty / ForwardVault). Fork your own proxy set; register only on the Registry in your fork.json.",
     deployedAt: full.deployedAt || new Date().toISOString(),
-    deployer: full.deployer,
-    addresses: {
-      registry: A.registry,
-      feeRouter: A.feeRouter,
-      core: A.core,
-      createDeployer: A.createDeployer,
-      tools: A.tools,
-    },
+    addresses,
     moduleIds: full.moduleIds,
-    presets: { bondingV1: String(full.presets.bondingV1) },
+    presets,
   };
+  if (full.forwardVaultTypeId) out.forwardVaultTypeId = full.forwardVaultTypeId;
 
   const outPath = path.join(__dirname, "source/bsctestnet.json");
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");

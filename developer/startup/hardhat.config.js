@@ -5,9 +5,9 @@ require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 const BSC_TESTNET_RPC =
   process.env.BSC_TESTNET_RPC_URL || process.env.RPC_URL || "https://bsc-testnet.publicnode.com";
-if (/nodereal\.io/i.test(BSC_TESTNET_RPC)) {
+if (/api[_-]?key|apikey|token=|private/i.test(BSC_TESTNET_RPC) || /\/\/[^/]*:[^@/]+@/.test(BSC_TESTNET_RPC)) {
   throw new Error(
-    "Do not use a private NodeReal URL in this toolkit. Use https://bsc-testnet.publicnode.com (or another public RPC).",
+    "Do not use a private RPC URL in this toolkit. Use https://bsc-testnet.publicnode.com (or another public RPC).",
   );
 }
 

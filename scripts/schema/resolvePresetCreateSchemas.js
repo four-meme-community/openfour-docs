@@ -39,7 +39,7 @@ export const VAULT_PARAM_NAMES = new Set(['taxVaultTypeId', 'taxVaultInitParams'
 export const AUTO_MINED_PARAM_NAMES = new Set(['hookSalt'])
 
 /**
- * Merge base + per-preset module params (same layout as CreateTokenPage / meme-launcher).
+ * Merge base + per-preset module params (same layout as CreateTokenPage).
  */
 export function buildCombinedParams(baseSchema, schemas, { raiseAmountField } = {}) {
   const hiddenBase =

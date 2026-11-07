@@ -2,24 +2,31 @@
   "role": "developer-source",
   "network": "bsctestnet",
   "chainId": 97,
-  "note": "Shared developer hub. Default SOURCE_DEPLOYMENT for fork-deploy. Fork your own proxy set before registering modules unless you own this Registry.",
+  "note": "Default fork-deploy source. Includes Bonding V1 and Bonding Tax V1 (Royalty / ForwardVault). Fork your own proxy set; register only on the Registry in your fork.json.",
   "deployedAt": "2026-11-02T06:08:56.479Z",
-  "deployer": "0xCcFC8E153bd979C0373B5C818aF191b2Bfc9fA14",
   "addresses": {
     "registry": "0xE5014c0616e528B0ABF7CC120A58032c1FbE7060",
     "feeRouter": "0x5BEA99298A6E731897ef2516EafC1f0289e0cc87",
     "core": "0xd6DAC7815A3B007822E0829bcDB3f193041285Db",
     "createDeployer": "0x8B67c37f17856B13Ff86A33Cc5386bC0A589D37B",
-    "tools": "0xdECbE01E91A3c0Abf841d3E32c1587a3b62E38c6"
+    "tools": "0xdECbE01E91A3c0Abf841d3E32c1587a3b62E38c6",
+    "taxVaultRegistry": "0x08477C50B5831cc22c33C8efAb8FbC97f3ec5864",
+    "forwardVaultImpl": "0xf2171bAbC2142F192eFF889D577642ad55b44091"
   },
   "moduleIds": {
     "TOKEN_STANDARD": "0x48f90f4115ab8ef5e9e882e46964405e86bb62323d676b602350fc8baef2637e",
     "VAULT_BASIC": "0x3e7c54e066dccd796d82c61050797d9b41fc573ce6b95b1968fb6e21c9df315b",
     "CURVE_BONDING": "0x0e4ee145a2864ef2ac97032a3c00ed121816998110d1cf364770093ce952cb47",
     "TRADE_SIMPLE": "0x379c13a7faced71bfa110d4297fd89666ac21c3407816ab9ef26027c15dce10d",
-    "MIGRATE_BONDING": "0x61ebdadb977338830566ff8b1ab173b121e652b69074c64dc393c15c91dc6f06"
+    "MIGRATE_BONDING": "0x61ebdadb977338830566ff8b1ab173b121e652b69074c64dc393c15c91dc6f06",
+    "TOKEN_TAX": "0x0364231154b2db7524cec107b17e1e298311ee316534fe17913a4291a3b08c23",
+    "VAULT_TAX_BONDING": "0x75d717b5bedefe4ec3f9fb6bd971008fa464bb02d8c1bb02924dc72dc554e166",
+    "TRADE_TAX_BONDING": "0xe961124ec390bdaa2eda8956ad65d9ef0a3bc4057ff87c48ff482d21e9cdfcf1",
+    "MIGRATE_BONDING_TAX": "0x43870b0a6bc2d211e33775a06d4240a7c554c9f9017e633d94ea368199fcf1ed"
   },
   "presets": {
-    "bondingV1": "1778027615722"
-  }
+    "bondingV1": "1778027615722",
+    "bondingTaxV1": "1778027615723"
+  },
+  "forwardVaultTypeId": "0x31305495a6a67b3607bd1db8a49c23bbd2dc1d0fc23df7f46f7c94da62d6c99a"
 }

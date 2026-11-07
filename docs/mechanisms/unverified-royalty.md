@@ -232,7 +232,19 @@ Pass with `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`, buy/sell ra
 
 Before sharing: bytecode is correct; `initialize` is one-shot; native/ERC20 paths work for target quotes; schema matches `_customInit`; withdrawals are authorized.
 
-### 4.2 Create on four.meme
+### 4.2 Create on a developer fork (recommended for testing)
+
+Every environment created with `developer/fork-deploy` ships **Bonding Tax V1** plus `taxVaultRegistry` with `SafuSkill.ForwardVault.v1` already registered. Use that path to develop and test a template before any production submit:
+
+1. `cd developer/fork-deploy && npm run fork`, then copy `out/fork-deployment.json` → `developer/workbench/data/fork.json`.
+2. Deploy your template implementation to the same testnet.
+3. In Workbench **Create**, select **Bonding Tax V1** (`presets.bondingTaxV1`).
+4. Set `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and outer vault params `abi.encode(template, initData)` (Workbench / schema UI encodes the same shape as §3.3–3.4).
+5. Create, then buy so tax is paid; check ForwardVault `clonedVault()` / `authorWallet()` and the 6% / 94% split.
+
+The same fork also includes **Bonding V1** for a non-tax create smoke test. Full fork notes: [`developer/fork-deploy/README.md`](../../developer/fork-deploy/README.md).
+
+### 4.3 Create on four.meme
 
 1. TaxToken (or compatible) create → royalty **Unverified Royalty**.
 2. Paste the deployed `template` address — the page loads schema and shows the template fields (§3.3).
@@ -245,3 +257,4 @@ After create: `token.founder()` = ForwardVault; `clonedVault()` = template clone
 
 - [TaxToken tax mechanism](./tax-token.md)
 - [Developer Guide §25](../developer-guide.md#25-developing-an-unverified-royalty-taxvault-template)
+- [Fork deploy (bundled Bonding + Bonding Tax presets)](../../developer/fork-deploy/README.md)

@@ -80,7 +80,7 @@ registry.upsertPreset({
 
 - Upsert a Registry you do not own.
 - Register on `chainId` 56 / 4663.
-- Point `fork.json` at the shared developer hub and register there unless you are its owner.
+- Register only on the Registry in your own `fork.json` (the set you forked).
 - Register an implementation that is uncompiled, untested, or whose schema does not match `Params`.
 
 ## Workspace write

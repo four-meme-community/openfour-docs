@@ -6,7 +6,6 @@
   "scripts": {
     "fork": "node fork-from-chain.js",
     "fork:dry": "DRY_RUN=1 node fork-from-chain.js",
-    "promote-source": "node promote-source.js",
     "self-test": "node fork-from-chain.js --self-test"
   },
   "dependencies": {

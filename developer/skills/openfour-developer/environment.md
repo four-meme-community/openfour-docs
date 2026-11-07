@@ -85,7 +85,7 @@ cd developer/fork-deploy
 npm install
 cp .env.example .env
 # Set DEPLOYER_PRIVATE_KEY. RPC defaults to https://bsc-testnet.publicnode.com
-# Do not put private RPC keys (e.g. NodeReal) into this repo.
+# Do not put private RPC URLs or API keys into this repo.
 # RPC must be the deployed BSC Testnet, or anvil/hardhat forked from it
 # A blank chain has no implementation bytecode and cannot be forked
 npm run fork:dry
@@ -98,10 +98,21 @@ Rules:
 - `DRY_RUN=1` is read-only and does not broadcast.
 - `chainId` 56 / 4663 is forbidden.
 - After success, copy `out/fork-deployment.json` to `developer/workbench/data/fork.json`.
-- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, `moduleIds` (`TOKEN_STANDARD` / `VAULT_BASIC` / `CURVE_BONDING` / `TRADE_SIMPLE` / `MIGRATE_BONDING`), and at least one bonding preset id.
+- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, standard + tax `moduleIds`, and both bundled presets: `presets.bondingV1` and `presets.bondingTaxV1`.
 - With the deployer key, read `Registry.owner()`, `Core.signer()`, and `Core.wrappedNative()` and confirm they match expectations.
 
-Default fork input is the **shared developer hub** at `developer/fork-deploy/source/bsctestnet.json`. It is fork input only — fork your own proxy set before registering modules unless you own that Registry.
+Default fork input is `developer/fork-deploy/source/bsctestnet.json`. Fork your own proxy set and register only on the Registry in your `fork.json`.
+
+### Bundled example presets (no extra register)
+
+After fork, create immediately in Workbench:
+
+| Preset | Use |
+| --- | --- |
+| **Bonding V1** | Standard bonding create / trade smoke test |
+| **Bonding Tax V1** | TaxToken + Royalty; develop/test unverified `ForwardVault` templates |
+
+Royalty template flow: implement under `contracts/taxvault/` → deploy template → Create with Bonding Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and `abi.encode(template, initData)` → buy to exercise the 6%/94% split. Step-by-step: [`developer/fork-deploy/README.md`](../../fork-deploy/README.md) and [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md).
 
 ## Funds and network
 

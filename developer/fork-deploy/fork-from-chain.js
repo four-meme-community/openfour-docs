@@ -1,9 +1,10 @@
 /**
- * Fork a new proxy set from the shared developer hub (source/bsctestnet.json).
+ * Fork a new proxy set from source/bsctestnet.json.
  *
  * Does not compile or deploy OpenFour implementations. New proxies point at
- * existing hub implementations, and the five standard modules register those
- * same implementations. The hub proxies themselves are never written.
+ * the implementations already referenced by that address list. Copies Bonding +
+ * Bonding Tax (Royalty) modules / presets, and wires TaxVaultRegistry
+ * (ForwardVault) when the source has one.
  *
  *   cd developer/fork-deploy && npm install
  *   cp .env.example .env    # fill DEPLOYER_PRIVATE_KEY (RPC defaults to publicnode)
@@ -26,7 +27,7 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 const ERC1967_IMPL_SLOT =
   "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
-// deployments/bsctestnet.log: the current Registry proxy's direct CREATE tx.
+// Creation tx whose init code is reused for new ERC-1967 proxies on this toolkit.
 const DEFAULT_PROXY_DEPLOY_TX =
   "0xc5e66936272ac4779c5c8388becbd86b0569a42b9ace144b174d0a5428b4620e";
 
@@ -36,7 +37,14 @@ const MODULES = [
   ["CURVE_BONDING", 2],
   ["TRADE_SIMPLE", 3],
   ["MIGRATE_BONDING", 4],
+  // Royalty / unverified ForwardVault path (Bonding Tax)
+  ["TOKEN_TAX", 0],
+  ["VAULT_TAX_BONDING", 1],
+  ["TRADE_TAX_BONDING", 3],
+  ["MIGRATE_BONDING_TAX", 4],
 ];
+
+const FORWARD_VAULT_TYPE_ID = ethers.keccak256(ethers.toUtf8Bytes("SafuSkill.ForwardVault.v1"));
 
 const registryAbi = [
   "function initialize()",
@@ -45,6 +53,8 @@ const registryAbi = [
   "function getModuleImplementation(bytes32 moduleKey) view returns (address)",
   "function getPreset(uint256 presetId) view returns (tuple(uint256 id, string name, string description, string version, bool active, bool createEnabled, address validator, bytes32 tokenModuleId, bytes32 vaultModuleId, bytes32 curveModuleId, bytes32 tradeModuleId, bytes32 migrateModuleId, bytes32 tokenImplId, bytes32 customDataId, address author))",
   "function getTokenImpl(bytes32 tokenImplId) view returns (tuple(address implementation, string version))",
+  "function taxVaultRegistry() view returns (address)",
+  "function setTaxVaultRegistry(address registry_)",
   "function setOpenFourCore(address core)",
   "function setOpenFourTool(address tool)",
   "function setCreateDeployer(address deployer)",
@@ -52,6 +62,11 @@ const registryAbi = [
   "function upsertTokenImpl(bytes32 tokenImplId, address implementation, string version)",
   "function upsertPreset(tuple(uint256 id, string name, string description, string version, bool active, bool createEnabled, address validator, bytes32 tokenModuleId, bytes32 vaultModuleId, bytes32 curveModuleId, bytes32 tradeModuleId, bytes32 migrateModuleId, bytes32 tokenImplId, bytes32 customDataId, address author) preset)",
   "function getModuleBeacon(bytes32 moduleKey) view returns (address)",
+];
+
+const taxVaultRegistryAbi = [
+  "function getVaultTypeImplementation(bytes32 typeId) view returns (address)",
+  "function getVaultType(bytes32 typeId) view returns (tuple(address beacon, address implementation, string name, string version, string description, bool active))",
 ];
 
 const feeRouterAbi = [
@@ -158,11 +173,108 @@ async function getDeployInput(provider, hash) {
   return input;
 }
 
-function loadPlanNumbers(presetIdRaw) {
-  if (presetIdRaw === undefined || presetIdRaw === null || presetIdRaw === "") {
-    throw new Error("deployment JSON has no presets.bondingV1; set PRESET_ID to override");
+function loadPresetEntries(deployment) {
+  const presets = deployment.presets || {};
+  const entries = Object.entries(presets).filter(([, id]) => id !== undefined && id !== null && String(id) !== "");
+  if (entries.length === 0) {
+    throw new Error("deployment JSON has no presets; need at least bondingV1");
   }
-  return BigInt(presetIdRaw);
+  return entries.map(([name, id]) => ({ name, id: BigInt(id) }));
+}
+
+async function readModule(registry, provider, name, expectedKind) {
+  const moduleId = ethers.keccak256(ethers.toUtf8Bytes(name));
+  const rec = await registry.getModule(moduleId);
+  if (rec.beacon === ethers.ZeroAddress) {
+    return null;
+  }
+  if (BigInt(rec.kind) !== BigInt(expectedKind)) {
+    throw new Error(`${name} kind is ${rec.kind}, expected ${expectedKind}`);
+  }
+  const implementation = ethers.getAddress(await registry.getModuleImplementation(moduleId));
+  await requireCode(provider, name, implementation);
+  return {
+    name,
+    moduleId,
+    kind: Number(expectedKind),
+    implementation,
+    sourceBeacon: ethers.getAddress(rec.beacon),
+    version: rec.metadata.version,
+    description: rec.metadata.description,
+    feeShareBps: Number(rec.metadata.feeShareBps),
+    active: Boolean(rec.active),
+  };
+}
+
+async function readPresetBundle(registry, feeRouter, provider, presetName, presetId, modulesById) {
+  const preset = await registry.getPreset(presetId);
+  if (preset.id === 0n) throw new Error(`source Registry has no preset ${presetName}=${presetId}`);
+
+  const slotFields = [
+    ["tokenModuleId", 0],
+    ["vaultModuleId", 1],
+    ["curveModuleId", 2],
+    ["tradeModuleId", 3],
+    ["migrateModuleId", 4],
+  ];
+  for (const [field, kind] of slotFields) {
+    const id = preset[field];
+    const mod = modulesById.get(id.toLowerCase());
+    if (!mod) {
+      throw new Error(`preset ${presetName} ${field}=${id} is not among forked modules; check source/bsctestnet.json`);
+    }
+    if (mod.kind !== kind) {
+      throw new Error(`preset ${presetName} ${field} module kind ${mod.kind} != ${kind}`);
+    }
+  }
+
+  const tokenImpl = await registry.getTokenImpl(preset.tokenImplId);
+  const tokenImplAddress = ethers.getAddress(tokenImpl.implementation);
+  if (tokenImplAddress === ethers.ZeroAddress) {
+    throw new Error(`preset ${presetName} tokenImplId ${preset.tokenImplId} has no implementation`);
+  }
+  await requireCode(provider, `${presetName} tokenImpl`, tokenImplAddress);
+
+  let validator = ethers.getAddress(preset.validator);
+  if (validator !== ethers.ZeroAddress) {
+    const validatorCode = await provider.getCode(validator);
+    if (!validatorCode || validatorCode === "0x") validator = ethers.ZeroAddress;
+  }
+
+  if (preset.customDataId !== ethers.ZeroHash) {
+    console.log(`preset ${presetName} has customData; fork keeps customDataId but does not copy a CustomData module`);
+  }
+
+  const presetFee = await feeRouter.presetFeeConfig(presetId);
+  return {
+    key: presetName,
+    id: preset.id,
+    name: preset.name,
+    description: preset.description,
+    version: preset.version,
+    active: preset.active,
+    createEnabled: preset.createEnabled,
+    validator,
+    tokenModuleId: preset.tokenModuleId,
+    vaultModuleId: preset.vaultModuleId,
+    curveModuleId: preset.curveModuleId,
+    tradeModuleId: preset.tradeModuleId,
+    migrateModuleId: preset.migrateModuleId,
+    tokenImplId: preset.tokenImplId,
+    customDataId: preset.customDataId,
+    tokenImpl: { address: tokenImplAddress, version: tokenImpl.version || "1" },
+    presetFee: presetFee.active
+      ? {
+          protocolFeeBps: Number(presetFee.protocolFeeBps),
+          developerFeePoolBps: Number(presetFee.developerFeePoolBps),
+          maxProtocolDevFeeBps: Number(presetFee.maxProtocolDevFeeBps),
+          maxTaxBps: Number(presetFee.maxTaxBps),
+          maxTaxTiers: Number(presetFee.maxTaxTiers),
+          active: true,
+          partnerProtocolShareBps: presetFee.partnerProtocolShareBps,
+        }
+      : null,
+  };
 }
 
 async function readSource(provider, deployment) {
@@ -172,7 +284,7 @@ async function readSource(provider, deployment) {
     A[key] = ethers.getAddress(A[key]);
   }
 
-  const presetId = loadPlanNumbers(process.env.PRESET_ID || deployment.presets?.bondingV1);
+  const presetEntries = loadPresetEntries(deployment);
   const registry = new ethers.Contract(A.registry, registryAbi, provider);
   const feeRouter = new ethers.Contract(A.feeRouter, feeRouterAbi, provider);
   const core = new ethers.Contract(A.core, coreAbi, provider);
@@ -187,88 +299,83 @@ async function readSource(provider, deployment) {
 
   const modules = [];
   for (const [name, expectedKind] of MODULES) {
-    const moduleId = ethers.keccak256(ethers.toUtf8Bytes(name));
     const listed = deployment.moduleIds?.[name];
+    const moduleId = ethers.keccak256(ethers.toUtf8Bytes(name));
     if (listed && listed.toLowerCase() !== moduleId.toLowerCase()) {
       throw new Error(`${name} moduleId does not match deployment JSON`);
     }
-    const rec = await registry.getModule(moduleId);
-    if (rec.beacon === ethers.ZeroAddress) {
+    const mod = await readModule(registry, provider, name, expectedKind);
+    if (!mod) {
+      // Tax modules are required when bondingTaxV1 is listed; otherwise optional.
+      const needsTax = presetEntries.some((row) => /tax|royalty/i.test(row.name));
+      if (name.startsWith("TOKEN_TAX") || name.includes("TAX")) {
+        if (needsTax) throw new Error(`source Registry has not registered ${name} (required for Royalty / Bonding Tax)`);
+        console.log(`skip module ${name} (not on source)`);
+        continue;
+      }
       throw new Error(`source Registry has not registered ${name}`);
     }
-    if (BigInt(rec.kind) !== BigInt(expectedKind)) {
-      throw new Error(`${name} kind is ${rec.kind}, expected ${expectedKind}`);
-    }
-    const implementation = ethers.getAddress(await registry.getModuleImplementation(moduleId));
-    await requireCode(provider, name, implementation);
-    modules.push({
-      name,
-      moduleId,
-      kind: Number(expectedKind),
-      implementation,
-      sourceBeacon: ethers.getAddress(rec.beacon),
-      version: rec.metadata.version,
-      description: rec.metadata.description,
-      feeShareBps: Number(rec.metadata.feeShareBps),
-      active: Boolean(rec.active),
+    modules.push(mod);
+  }
+
+  const modulesById = new Map(modules.map((mod) => [mod.moduleId.toLowerCase(), mod]));
+  const presets = [];
+  for (const row of presetEntries) {
+    presets.push(await readPresetBundle(registry, feeRouter, provider, row.name, row.id, modulesById));
+  }
+
+  const tokenImpls = [];
+  const seenToken = new Set();
+  for (const preset of presets) {
+    const key = preset.tokenImplId.toLowerCase();
+    if (seenToken.has(key)) continue;
+    seenToken.add(key);
+    tokenImpls.push({
+      tokenImplId: preset.tokenImplId,
+      address: preset.tokenImpl.address,
+      version: preset.tokenImpl.version,
     });
   }
 
-  const preset = await registry.getPreset(presetId);
-  if (preset.id === 0n) throw new Error(`source Registry has no preset ${presetId}`);
-  // The live bonding preset may already point at a newer migrate. The fork pins these five standard modules.
-  const pinned = {
-    tokenModuleId: modules[0].moduleId,
-    vaultModuleId: modules[1].moduleId,
-    curveModuleId: modules[2].moduleId,
-    tradeModuleId: modules[3].moduleId,
-    migrateModuleId: modules[4].moduleId,
-  };
-  for (const [field, id] of Object.entries(pinned)) {
-    if (preset[field].toLowerCase() !== id.toLowerCase()) {
-      console.log(`preset ${presetId} ${field} differs from the ${field.replace("ModuleId", "")} standard module; fork uses the standard module`);
+  let taxVaultRegistry = ethers.ZeroAddress;
+  try {
+    taxVaultRegistry = ethers.getAddress(await registry.taxVaultRegistry());
+  } catch {
+    taxVaultRegistry = ethers.ZeroAddress;
+  }
+  if (A.taxVaultRegistry) {
+    taxVaultRegistry = ethers.getAddress(A.taxVaultRegistry);
+  }
+
+  let forwardVaultImpl = ethers.ZeroAddress;
+  if (taxVaultRegistry !== ethers.ZeroAddress) {
+    await requireCode(provider, "taxVaultRegistry", taxVaultRegistry);
+    const tvr = new ethers.Contract(taxVaultRegistry, taxVaultRegistryAbi, provider);
+    try {
+      forwardVaultImpl = ethers.getAddress(await tvr.getVaultTypeImplementation(FORWARD_VAULT_TYPE_ID));
+    } catch {
+      forwardVaultImpl = ethers.ZeroAddress;
     }
-  }
-  if (preset.customDataId !== ethers.ZeroHash) {
-    console.log(`preset ${presetId} has customData; fork does not copy it`);
-  }
-
-  const tokenImpl = await registry.getTokenImpl(preset.tokenImplId);
-  const tokenImplAddress = ethers.getAddress(tokenImpl.implementation);
-  if (tokenImplAddress === ethers.ZeroAddress) {
-    throw new Error(`preset tokenImplId ${preset.tokenImplId} has no implementation`);
-  }
-  await requireCode(provider, "OpenFourToken implementation", tokenImplAddress);
-
-  let validator = ethers.getAddress(preset.validator);
-  if (validator !== ethers.ZeroAddress) {
-    const validatorCode = await provider.getCode(validator);
-    if (!validatorCode || validatorCode === "0x") validator = ethers.ZeroAddress;
+    if (forwardVaultImpl === ethers.ZeroAddress) {
+      console.log("taxVaultRegistry has no SafuSkill.ForwardVault.v1 implementation");
+    } else {
+      await requireCode(provider, "ForwardVault", forwardVaultImpl);
+    }
   }
 
   const feeConfig = await feeRouter.feeConfig();
-  const presetFee = await feeRouter.presetFeeConfig(presetId);
   const wrappedNative = ethers.getAddress(await core.wrappedNative());
   await requireCode(provider, "wrapped native", wrappedNative);
 
   return {
     source: A,
-    presetId,
     impls,
     modules,
-    preset: {
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      version: preset.version,
-      active: preset.active,
-      createEnabled: preset.createEnabled,
-      validator,
-      ...pinned,
-      tokenImplId: preset.tokenImplId,
-      customDataId: ethers.ZeroHash,
-    },
-    tokenImpl: { address: tokenImplAddress, version: tokenImpl.version },
+    presets,
+    tokenImpls,
+    taxVaultRegistry,
+    forwardVaultImpl,
+    forwardVaultTypeId: FORWARD_VAULT_TYPE_ID,
     feeConfig: {
       protocolFeeBps: Number(feeConfig.protocolFeeBps),
       developerFeePoolBps: Number(feeConfig.developerFeePoolBps),
@@ -282,17 +389,6 @@ async function readSource(provider, deployment) {
       placeholder5: feeConfig.placeholder5,
       placeholder6: feeConfig.placeholder6,
     },
-    presetFee: presetFee.active
-      ? {
-          protocolFeeBps: Number(presetFee.protocolFeeBps),
-          developerFeePoolBps: Number(presetFee.developerFeePoolBps),
-          maxProtocolDevFeeBps: Number(presetFee.maxProtocolDevFeeBps),
-          maxTaxBps: Number(presetFee.maxTaxBps),
-          maxTaxTiers: Number(presetFee.maxTaxTiers),
-          active: true,
-          partnerProtocolShareBps: presetFee.partnerProtocolShareBps,
-        }
-      : null,
     wrappedNative,
   };
 }
@@ -347,8 +443,8 @@ async function main() {
   }
 
   const rpc = process.env.RPC_URL || process.env.BSC_TESTNET_RPC_URL || "https://bsc-testnet.publicnode.com";
-  if (/nodereal\.io/i.test(rpc)) {
-    throw new Error("Do not use a private NodeReal URL in this toolkit. Use https://bsc-testnet.publicnode.com (or another public RPC).");
+  if (/api[_-]?key|apikey|token=|private/i.test(rpc) || /\/\/[^/]*:[^@/]+@/.test(rpc)) {
+    throw new Error("Do not use a private RPC URL in this toolkit. Use https://bsc-testnet.publicnode.com (or another public RPC).");
   }
   const dryRun = process.env.DRY_RUN === "1";
   const provider = new ethers.JsonRpcProvider(rpc);
@@ -368,12 +464,17 @@ async function main() {
   const source = await readSource(provider, deployment);
   console.log("source proxies", source.source.registry);
   console.log("reused implementations", source.impls);
+  console.log(
+    `taxVaultRegistry=${source.taxVaultRegistry} forwardVaultImpl=${source.forwardVaultImpl}`
+  );
   for (const mod of source.modules) {
     console.log(`module ${mod.name} impl=${mod.implementation} beacon=${mod.sourceBeacon} active=${mod.active}`);
   }
-  console.log(
-    `preset ${source.presetId} ${source.preset.name} tokenImpl=${source.tokenImpl.address} validator=${source.preset.validator}`
-  );
+  for (const preset of source.presets) {
+    console.log(
+      `preset ${preset.key} ${preset.id} ${preset.name} tokenImpl=${preset.tokenImpl.address} validator=${preset.validator}`
+    );
+  }
 
   if (dryRun) {
     console.log("DRY_RUN=1, no transactions sent.");
@@ -452,14 +553,27 @@ async function main() {
     );
   }
 
-  await send(
-    "registry.upsertTokenImpl",
-    registry,
-    "upsertTokenImpl",
-    [source.preset.tokenImplId, source.tokenImpl.address, source.tokenImpl.version || "1"],
-    protectedSet,
-    overrides
-  );
+  if (source.taxVaultRegistry && source.taxVaultRegistry !== ethers.ZeroAddress) {
+    await send(
+      "registry.setTaxVaultRegistry",
+      registry,
+      "setTaxVaultRegistry",
+      [source.taxVaultRegistry],
+      protectedSet,
+      overrides
+    );
+  }
+
+  for (const tokenImpl of source.tokenImpls) {
+    await send(
+      `registry.upsertTokenImpl ${tokenImpl.tokenImplId}`,
+      registry,
+      "upsertTokenImpl",
+      [tokenImpl.tokenImplId, tokenImpl.address, tokenImpl.version || "1"],
+      protectedSet,
+      overrides
+    );
+  }
 
   const moduleBeacons = {};
   for (const mod of source.modules) {
@@ -490,31 +604,47 @@ async function main() {
     }
   }
 
-  await send(
-    "registry.upsertPreset",
-    registry,
-    "upsertPreset",
-    [
-      {
-        ...source.preset,
-        id: source.presetId,
-        author: presetAuthor,
-      },
-    ],
-    protectedSet,
-    overrides
-  );
-
-  if (source.presetFee) {
+  for (const preset of source.presets) {
     await send(
-      "feeRouter.setPresetFeeConfig",
-      feeRouter,
-      "setPresetFeeConfig",
-      [source.presetId, source.presetFee],
+      `registry.upsertPreset ${preset.key}`,
+      registry,
+      "upsertPreset",
+      [
+        {
+          id: preset.id,
+          name: preset.name,
+          description: preset.description,
+          version: preset.version,
+          active: preset.active,
+          createEnabled: preset.createEnabled,
+          validator: preset.validator,
+          tokenModuleId: preset.tokenModuleId,
+          vaultModuleId: preset.vaultModuleId,
+          curveModuleId: preset.curveModuleId,
+          tradeModuleId: preset.tradeModuleId,
+          migrateModuleId: preset.migrateModuleId,
+          tokenImplId: preset.tokenImplId,
+          customDataId: preset.customDataId,
+          author: presetAuthor,
+        },
+      ],
       protectedSet,
       overrides
     );
+    if (preset.presetFee) {
+      await send(
+        `feeRouter.setPresetFeeConfig ${preset.key}`,
+        feeRouter,
+        "setPresetFeeConfig",
+        [preset.id, preset.presetFee],
+        protectedSet,
+        overrides
+      );
+    }
   }
+
+  const bonding = source.presets.find((row) => row.key === "bondingV1") || source.presets[0];
+  const tax = source.presets.find((row) => row.key === "bondingTaxV1");
 
   const out = {
     network: deployment.network || "fork",
@@ -538,13 +668,17 @@ async function main() {
       createDeployer: deployerAddr,
       tools: toolsAddr,
       wbnb: source.wrappedNative,
-      tokenImpl: source.tokenImpl.address,
-      validator: source.preset.validator,
+      taxVaultRegistry: source.taxVaultRegistry,
+      forwardVaultImpl: source.forwardVaultImpl,
+      tokenImpl: bonding.tokenImpl.address,
+      taxTokenImpl: tax ? tax.tokenImpl.address : undefined,
+      validator: bonding.validator,
     },
     moduleIds: Object.fromEntries(source.modules.map((mod) => [mod.name, mod.moduleId])),
     moduleImplementations: Object.fromEntries(source.modules.map((mod) => [mod.name, mod.implementation])),
     beacons: moduleBeacons,
-    presets: { bondingV1: source.presetId.toString() },
+    forwardVaultTypeId: source.forwardVaultTypeId,
+    presets: Object.fromEntries(source.presets.map((row) => [row.key, row.id.toString()])),
   };
 
   const outDir = path.join(__dirname, "out");

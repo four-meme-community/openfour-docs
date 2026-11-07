@@ -232,7 +232,19 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 
 分享前：位元組碼正確；`initialize` 不可二次執行；目標 quote 的 native/ERC20 路徑可用；schema 與 `_customInit` 一致；提款路徑有授權。
 
-### 4.2 在 four.meme 建立
+### 4.2 在開發者 fork 上建立（建議先在此測試）
+
+用 `developer/fork-deploy` 建立的環境預設帶有 **Bonding Tax V1**，且 `taxVaultRegistry` 已註冊 `SafuSkill.ForwardVault.v1`。開發與測試模板請走這條路徑，再考慮正式提交：
+
+1. `cd developer/fork-deploy && npm run fork`，並把 `out/fork-deployment.json` 複製到 `developer/workbench/data/fork.json`。
+2. 在同一測試網部署你的 template implementation。
+3. 在 Workbench **Create** 選擇 **Bonding Tax V1**（`presets.bondingTaxV1`）。
+4. 設定 `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`，外層 vault 參數為 `abi.encode(template, initData)`（與 §3.3–3.4 相同形狀；Workbench / schema UI 會編碼）。
+5. 建立後買入以產生稅費；檢查 ForwardVault 的 `clonedVault()` / `authorWallet()` 以及約 6% / 94% 分成。
+
+同一 fork 也帶有 **Bonding V1**，可用於非稅費的建立冒煙測試。完整說明見 [`developer/fork-deploy/README.md`](../../../developer/fork-deploy/README.md)。
+
+### 4.3 在 four.meme 建立
 
 1. TaxToken（或相容）建立 → 版稅選 **未驗證版稅 / Unverified Royalty**。
 2. 貼上已部署的 `template`——頁面讀取 schema 並展示模板欄位（§3.3）。
@@ -245,3 +257,4 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 
 - [TaxToken 稅費機制](./tax-token.md)
 - [開發文件 §25](../developer-guide.md#25-開發未驗證版稅-taxvault-模板)
+- [Fork deploy（預設 Bonding + Bonding Tax）](../../../developer/fork-deploy/README.md)

@@ -1,3 +1,5 @@
 node_modules/
 .env
 out/
+enrich-royalty.js
+promote-source.js
