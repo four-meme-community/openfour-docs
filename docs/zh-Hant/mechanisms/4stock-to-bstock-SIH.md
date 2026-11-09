@@ -188,3 +188,7 @@ SIH 是 **JIT 流動性**：兩次 swap 之間 CLPoolManager 中池子的 L 多�
 - 每個 meme 只保留一個 `activePool`。
 - 報價優先鏈上 Infinity quoter 或模擬（JIT）；下單前模擬。
 - PoolKey / 暫停 / 冷啟動讀方法見第 4–6 節參考。
+
+## 9. 本地測試（開發者 fork）
+
+若要在自有 Core 上驗證 Stock4 稅幣建立、ForwardVault 與 SIH 畢業，使用 [`developer/fork-deploy`](../../../developer/fork-deploy/README.md) 內建的 **Stock4 Tax V1** preset（文檔含 BNC4 取得方式與 SIH Manager 接線說明）。僅測 ForwardVault / 版稅、不需要 Stock4 或 SIH 時，改用 **Bonding Tax V1** 即可。

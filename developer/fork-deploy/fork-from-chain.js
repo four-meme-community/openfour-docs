@@ -20,6 +20,7 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 const { ethers } = require("ethers");
+const { setupStock4SihForCore } = require("./lib/stock4SihFork");
 
 dotenv.config({ path: path.join(__dirname, "../.env") });
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -42,6 +43,9 @@ const MODULES = [
   ["VAULT_TAX_BONDING", 1],
   ["TRADE_TAX_BONDING", 3],
   ["MIGRATE_BONDING_TAX", 4],
+  // Stock4 Tax + ForwardVault create / bonding-tax path
+  ["TOKEN_TAX_STOCK", 0],
+  ["MIGRATE_BONDING_TAX_PCS_SIH", 4],
 ];
 
 const FORWARD_VAULT_TYPE_ID = ethers.keccak256(ethers.toUtf8Bytes("SafuSkill.ForwardVault.v1"));
@@ -306,10 +310,28 @@ async function readSource(provider, deployment) {
     }
     const mod = await readModule(registry, provider, name, expectedKind);
     if (!mod) {
-      // Tax modules are required when bondingTaxV1 is listed; otherwise optional.
-      const needsTax = presetEntries.some((row) => /tax|royalty/i.test(row.name));
-      if (name.startsWith("TOKEN_TAX") || name.includes("TAX")) {
-        if (needsTax) throw new Error(`source Registry has not registered ${name} (required for Royalty / Bonding Tax)`);
+      const needsBondingTax = presetEntries.some((row) => /bondingTax|royalty/i.test(row.name));
+      const needsStock4 = presetEntries.some((row) => /stock4/i.test(row.name));
+      const isBondingTaxOnly =
+        name === "TOKEN_TAX" || name === "MIGRATE_BONDING_TAX";
+      const isStock4Only =
+        name === "TOKEN_TAX_STOCK" || name === "MIGRATE_BONDING_TAX_PCS_SIH";
+      const isSharedTax =
+        name === "VAULT_TAX_BONDING" || name === "TRADE_TAX_BONDING";
+      if (isBondingTaxOnly) {
+        if (needsBondingTax) throw new Error(`source Registry has not registered ${name} (required for Bonding Tax / Royalty)`);
+        console.log(`skip module ${name} (not on source)`);
+        continue;
+      }
+      if (isStock4Only) {
+        if (needsStock4) throw new Error(`source Registry has not registered ${name} (required for Stock4 Tax)`);
+        console.log(`skip module ${name} (not on source)`);
+        continue;
+      }
+      if (isSharedTax) {
+        if (needsBondingTax || needsStock4) {
+          throw new Error(`source Registry has not registered ${name} (required for tax presets)`);
+        }
         console.log(`skip module ${name} (not on source)`);
         continue;
       }
@@ -473,6 +495,13 @@ async function main() {
   for (const preset of source.presets) {
     console.log(
       `preset ${preset.key} ${preset.id} ${preset.name} tokenImpl=${preset.tokenImpl.address} validator=${preset.validator}`
+    );
+  }
+
+  const wantsStock4Sih = source.presets.some((row) => row.key === "stock4TaxV1") && deployment.stock4Sih;
+  if (wantsStock4Sih) {
+    console.log(
+      `stock4 SIH: on fork will deploy Manager(Core)+Migrate, reuse hookOwner=${deployment.stock4Sih.hookOwner} quotes=${(deployment.stock4Sih.quotes || []).join(",")}`
     );
   }
 
@@ -643,8 +672,46 @@ async function main() {
     }
   }
 
+  let stock4SihOut;
+  if (wantsStock4Sih) {
+    stock4SihOut = await setupStock4SihForCore({
+      wallet,
+      coreAddr,
+      stock4Sih: deployment.stock4Sih,
+      overrides,
+    });
+    const migrateMod = source.modules.find((m) => m.name === "MIGRATE_BONDING_TAX_PCS_SIH");
+    if (!migrateMod) throw new Error("MIGRATE_BONDING_TAX_PCS_SIH missing from forked modules");
+    await send(
+      "registry.upsertModule MIGRATE_BONDING_TAX_PCS_SIH (fork Manager)",
+      registry,
+      "upsertModule",
+      [
+        migrateMod.moduleId,
+        stock4SihOut.migrateImpl,
+        migrateMod.kind,
+        {
+          moduleId: migrateMod.moduleId,
+          version: migrateMod.version || "1.0.0",
+          name: migrateMod.name,
+          description: migrateMod.description || "Graduation into shared SIH via fork Manager",
+          author: wallet.address,
+          feeShareBps: migrateMod.feeShareBps,
+        },
+        migrateMod.active,
+      ],
+      protectedSet,
+      overrides
+    );
+    moduleBeacons.MIGRATE_BONDING_TAX_PCS_SIH = ethers.getAddress(
+      await registry.getModuleBeacon(migrateMod.moduleId)
+    );
+    moduleBeacons.MIGRATE_BONDING_TAX_PCS_SIH_IMPL = stock4SihOut.migrateImpl;
+  }
+
   const bonding = source.presets.find((row) => row.key === "bondingV1") || source.presets[0];
   const tax = source.presets.find((row) => row.key === "bondingTaxV1");
+  const stock4 = source.presets.find((row) => row.key === "stock4TaxV1");
 
   const out = {
     network: deployment.network || "fork",
@@ -672,13 +739,22 @@ async function main() {
       forwardVaultImpl: source.forwardVaultImpl,
       tokenImpl: bonding.tokenImpl.address,
       taxTokenImpl: tax ? tax.tokenImpl.address : undefined,
+      stock4TaxTokenImpl: stock4 ? stock4.tokenImpl.address : undefined,
       validator: bonding.validator,
     },
     moduleIds: Object.fromEntries(source.modules.map((mod) => [mod.name, mod.moduleId])),
-    moduleImplementations: Object.fromEntries(source.modules.map((mod) => [mod.name, mod.implementation])),
+    moduleImplementations: Object.fromEntries(
+      source.modules.map((mod) => [
+        mod.name,
+        mod.name === "MIGRATE_BONDING_TAX_PCS_SIH" && stock4SihOut
+          ? stock4SihOut.migrateImpl
+          : mod.implementation,
+      ])
+    ),
     beacons: moduleBeacons,
     forwardVaultTypeId: source.forwardVaultTypeId,
     presets: Object.fromEntries(source.presets.map((row) => [row.key, row.id.toString()])),
+    stock4Sih: stock4SihOut || undefined,
   };
 
   const outDir = path.join(__dirname, "out");

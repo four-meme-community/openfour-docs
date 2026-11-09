@@ -188,3 +188,7 @@ Example quotes (not exhaustive): 4Stock/BNC4, bStock/BNCB. Live quote from `Meme
 - One `activePool` per meme.
 - Prefer on-chain Infinity quoter / simulation (JIT); simulate before send.
 - PoolKey / pause / cold-start reads: see §§4–6.
+
+## 9. Local test (developer fork)
+
+To exercise Stock4 tax create + ForwardVault + SIH graduate on your own Core, use the bundled **Stock4 Tax V1** preset from [`developer/fork-deploy`](../../developer/fork-deploy/README.md) (BNC4 acquisition and SIH Manager wiring are documented there). For Royalty-only ForwardVault without Stock4/SIH, use **Bonding Tax V1** instead.

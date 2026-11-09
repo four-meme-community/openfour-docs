@@ -98,24 +98,26 @@ Rules:
 - `DRY_RUN=1` is read-only and does not broadcast.
 - `chainId` 56 / 4663 is forbidden.
 - After success, copy `out/fork-deployment.json` to `developer/workbench/data/fork.json`.
-- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, standard + tax `moduleIds`, and both bundled presets: `presets.bondingV1` and `presets.bondingTaxV1`.
+- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, standard + tax `moduleIds`, and bundled presets: `presets.bondingV1`, `presets.bondingTaxV1`, and `presets.stock4TaxV1`.
 - With the deployer key, read `Registry.owner()`, `Core.signer()`, and `Core.wrappedNative()` and confirm they match expectations.
 
 Default fork input is `developer/fork-deploy/source/bsctestnet.json`. Fork your own proxy set and register only on the Registry in your `fork.json`.
 
 ### Bundled example presets (no extra register)
 
-After fork, create immediately in Workbench:
+After fork, create immediately in Workbench — three presets:
 
-| Preset | Token | Vault / Trade | Use |
-| --- | --- | --- | --- |
-| **Bonding V1** | [`OpenFourToken.sol`](../../../contracts/token/OpenFourToken.sol) | [`StandardVault`](../../../contracts/modules/vault/StandardVault.sol) · [`SimpleTradeModule`](../../../contracts/modules/trade/SimpleTradeModule.sol) | Standard bonding create / trade smoke test |
-| **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | [`TaxBondingVault`](../../../contracts/modules/vault/TaxBondingVault.sol) · [`TaxBondingTradeModule`](../../../contracts/modules/trade/TaxBondingTradeModule.sol) | TaxToken + Royalty; develop/test unverified `ForwardVault` templates |
+| Preset | Token | What to test |
+| --- | --- | --- |
+| **Bonding V1** | [`OpenFourToken.sol`](../../../contracts/token/OpenFourToken.sol) | Standard bonding create / trade / migrate smoke |
+| **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | TaxToken + **ForwardVault** Unverified Royalty (WBNB quote OK) |
+| **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | **Stock4 tax token** (BNC4 quote) + ForwardVault bonding tax; **migrate → Infinity SIH** |
 
-Royalty template flow: implement under `contracts/taxvault/` → deploy template → Create with Bonding Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and `abi.encode(template, initData)` → buy to exercise the 6%/94% split. Step-by-step: [`developer/fork-deploy/README.md`](../../fork-deploy/README.md) and [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md).
+Royalty / ForwardVault: implement under `contracts/taxvault/` → Create with Bonding Tax V1 or Stock4 Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`. Stock4 also needs **BNC4** as quote and can graduate to SIH. Details (including how to get BNC4): [`developer/fork-deploy/README.md`](../../fork-deploy/README.md), [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md), [4Stock → bStock](../../../docs/mechanisms/4stock-to-bstock-SIH.md).
 
 ## Funds and network
 
 - Deploy / create / trade need test BNB (or impersonation / prefunded balances on a local fork).
 - When quote is WBNB, attach `msg.value` for `createToken` / `buy` using the Workbench native rules.
+- **Stock4 Tax V1** needs test **BNC4** (`0xB179cBFd…`); swap on Pancake V3 WBNB/BNC4 or MockU/BNC4, or buy via Stock4Exchange — see fork-deploy README.
 - On a local anvil fork, RPC, `fork.json.rpcUrl`, and the wallet chainId must match.

@@ -234,11 +234,11 @@ Before sharing: bytecode is correct; `initialize` is one-shot; native/ERC20 path
 
 ### 4.2 Create on a developer fork (recommended for testing)
 
-Every environment created with `developer/fork-deploy` ships **Bonding Tax V1** plus `taxVaultRegistry` with `SafuSkill.ForwardVault.v1` already registered. Use that path to develop and test a template before any production submit:
+Every environment created with `developer/fork-deploy` ships **Bonding Tax V1** and **Stock4 Tax V1**, plus `taxVaultRegistry` with `SafuSkill.ForwardVault.v1` already registered. Use either tax preset to develop and test a template before any production submit (create + bonding tax → ForwardVault). Stock4 forks also get a Core-bound SIH Manager that reuses the shared hook so migrate can graduate:
 
 1. `cd developer/fork-deploy && npm run fork`, then copy `out/fork-deployment.json` → `developer/workbench/data/fork.json`.
 2. Deploy your template implementation to the same testnet.
-3. In Workbench **Create**, select **Bonding Tax V1** (`presets.bondingTaxV1`).
+3. In Workbench **Create**, select **Bonding Tax V1** (`presets.bondingTaxV1`) or **Stock4 Tax V1** (`presets.stock4TaxV1`; quote must be an allowed Stock4).
 4. Set `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and outer vault params `abi.encode(template, initData)` (Workbench / schema UI encodes the same shape as §3.3–3.4).
 5. Create, then buy so tax is paid; check ForwardVault `clonedVault()` / `authorWallet()` and the 6% / 94% split.
 
@@ -258,4 +258,5 @@ After create: `token.founder()` = ForwardVault; `clonedVault()` = template clone
 - Token implementation: [`contracts/token/TaxToken.sol`](../../contracts/token/TaxToken.sol)
 - [TaxToken tax mechanism](./tax-token.md)
 - [Developer Guide §25](../developer-guide.md#25-developing-an-unverified-royalty-taxvault-template)
-- [Fork deploy (bundled Bonding + Bonding Tax presets)](../../developer/fork-deploy/README.md)
+- [Fork deploy (Bonding / Bonding Tax / Stock4 Tax + BNC4 notes)](../../developer/fork-deploy/README.md)
+- [4Stock → bStock (SIH)](./4stock-to-bstock-SIH.md)

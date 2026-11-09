@@ -2,7 +2,7 @@
   "role": "developer-source",
   "network": "bsctestnet",
   "chainId": 97,
-  "note": "Default fork-deploy source. Includes Bonding V1 and Bonding Tax V1 (Royalty / ForwardVault). Fork your own proxy set; register only on the Registry in your fork.json.",
+  "note": "Default fork-deploy source. Includes Bonding V1, Bonding Tax V1 (Royalty / ForwardVault), and Stock4 Tax (create + tax → ForwardVault; fork deploys Manager for SIH graduate on shared hooks). Fork your own proxy set; register only on the Registry in your fork.json.",
   "deployedAt": "2026-11-02T06:08:56.479Z",
   "addresses": {
     "registry": "0xE5014c0616e528B0ABF7CC120A58032c1FbE7060",
@@ -22,11 +22,29 @@
     "TOKEN_TAX": "0x0364231154b2db7524cec107b17e1e298311ee316534fe17913a4291a3b08c23",
     "VAULT_TAX_BONDING": "0x75d717b5bedefe4ec3f9fb6bd971008fa464bb02d8c1bb02924dc72dc554e166",
     "TRADE_TAX_BONDING": "0xe961124ec390bdaa2eda8956ad65d9ef0a3bc4057ff87c48ff482d21e9cdfcf1",
-    "MIGRATE_BONDING_TAX": "0x43870b0a6bc2d211e33775a06d4240a7c554c9f9017e633d94ea368199fcf1ed"
+    "MIGRATE_BONDING_TAX": "0x43870b0a6bc2d211e33775a06d4240a7c554c9f9017e633d94ea368199fcf1ed",
+    "TOKEN_TAX_STOCK": "0xb743f7ed02b2f1e6457bac8967b41b47a782ae2fd684eb474c956b7e30cb69fd",
+    "MIGRATE_BONDING_TAX_PCS_SIH": "0xffb9da01fb03a4dbc21e48516d77c30336b045a72f2d2a1b52dec824ccd66c1e"
   },
   "presets": {
     "bondingV1": "1778027615722",
-    "bondingTaxV1": "1778027615723"
+    "bondingTaxV1": "1778027615723",
+    "stock4TaxV1": "1778027615733"
   },
-  "forwardVaultTypeId": "0x31305495a6a67b3607bd1db8a49c23bbd2dc1d0fc23df7f46f7c94da62d6c99a"
+  "forwardVaultTypeId": "0x31305495a6a67b3607bd1db8a49c23bbd2dc1d0fc23df7f46f7c94da62d6c99a",
+  "stock4Sih": {
+    "hookOwner": "0x08AcD5111029Cda541e271B1668223d722edaA25",
+    "monitor": "0x5d9bb0D58783B614EE90A8d5C738866F01aa5498",
+    "hook": "0x56Dc026b9ac8a00ADDBA296e32fE603497AfDD4c",
+    "taxLiquidityHelper": "0x2AC52dA4f09d25eeeF70f0AC333bDD17eA67A9f4",
+    "extraSihRoutes": [
+      "0xCAf8908B9bF1D577008Bef7643f2E8dB13c52Fc1",
+      "0xaed3B7E5C623d6cFc694492e7774aC05922e8969"
+    ],
+    "quotes": [
+      "0xB179cBFdE44a9960Dd6C88bC3D163d36C65ae7C9"
+    ],
+    "hubManager": "0xC6fA93D8D3294700b1e006D70d4554B18fA8f299",
+    "hubMigrateImpl": "0x93D8578566A686148B0A7FD92e7fEe9ABc4d779f"
+  }
 }

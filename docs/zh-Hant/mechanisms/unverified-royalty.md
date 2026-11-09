@@ -234,11 +234,11 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 
 ### 4.2 在開發者 fork 上建立（建議先在此測試）
 
-用 `developer/fork-deploy` 建立的環境預設帶有 **Bonding Tax V1**，且 `taxVaultRegistry` 已註冊 `SafuSkill.ForwardVault.v1`。開發與測試模板請走這條路徑，再考慮正式提交：
+用 `developer/fork-deploy` 建立的環境預設帶有 **Bonding Tax V1** 與 **Stock4 Tax V1**，且 `taxVaultRegistry` 已註冊 `SafuSkill.ForwardVault.v1`。用任一稅費 preset 開發與測試模板（建立 + 內盤稅 → ForwardVault）。Stock4 fork 還會為本 Core 部署 SIH Manager（復用共享 hook），以便 migrate 畢業：
 
 1. `cd developer/fork-deploy && npm run fork`，並把 `out/fork-deployment.json` 複製到 `developer/workbench/data/fork.json`。
 2. 在同一測試網部署你的 template implementation。
-3. 在 Workbench **Create** 選擇 **Bonding Tax V1**（`presets.bondingTaxV1`）。
+3. 在 Workbench **Create** 選擇 **Bonding Tax V1**（`presets.bondingTaxV1`）或 **Stock4 Tax V1**（`presets.stock4TaxV1`；quote 須為允許的 Stock4）。
 4. 設定 `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`，外層 vault 參數為 `abi.encode(template, initData)`（與 §3.3–3.4 相同形狀；Workbench / schema UI 會編碼）。
 5. 建立後買入以產生稅費；檢查 ForwardVault 的 `clonedVault()` / `authorWallet()` 以及約 6% / 94% 分成。
 
@@ -258,4 +258,5 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 - Token 實作：[`contracts/token/TaxToken.sol`](../../../contracts/token/TaxToken.sol)
 - [TaxToken 稅費機制](./tax-token.md)
 - [開發文件 §25](../developer-guide.md#25-開發未驗證版稅-taxvault-模板)
-- [Fork deploy（預設 Bonding + Bonding Tax）](../../../developer/fork-deploy/README.md)
+- [Fork deploy（Bonding / Bonding Tax / Stock4 Tax + BNC4 說明）](../../../developer/fork-deploy/README.md)
+- [4Stock → bStock（SIH）](./4stock-to-bstock-SIH.md)

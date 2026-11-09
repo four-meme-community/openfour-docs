@@ -786,7 +786,7 @@ Custom data module：
 ## 25. 開發未驗證版稅 TaxVault 模板
 
 > 機制總覽（建議先讀）：[未驗證版稅（`ForwardVault`）](./mechanisms/unverified-royalty.md)。
-> 開發者 fork 測試：`developer/fork-deploy` 之後，用預設的 **Bonding Tax V1** + ForwardVault——見 [`developer/fork-deploy/README.md`](../../developer/fork-deploy/README.md)。
+> 開發者 fork 測試：`developer/fork-deploy` 之後，用 **Bonding Tax V1** 或 **Stock4 Tax V1** + ForwardVault——見 [`developer/fork-deploy/README.md`](../../developer/fork-deploy/README.md)。
 
 OpenFour Royalty 模式允許建立者透過平台 `ForwardVault` 包裝器使用未驗證的 TaxVault implementation。參考 implementation：BSC [`0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4`](https://bscscan.com/address/0xD3917AA849ec5122a4C0D48e054fa3B5514C47e4#code)、Robinhood [`0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C`](https://robin.etherscan.io/address/0x65B41F0A5EB7d4e1847066352f46808FF6a49D3C)。使用此模式不代表 OpenFour 已審核、審計、註冊或認可所提交的模板。
 
