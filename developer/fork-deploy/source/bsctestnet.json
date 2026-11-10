@@ -2,7 +2,7 @@
   "role": "developer-source",
   "network": "bsctestnet",
   "chainId": 97,
-  "note": "Default fork-deploy source. Includes Bonding V1, Bonding Tax V1 (Royalty / ForwardVault), and Stock4 Tax (create + tax → ForwardVault; fork deploys Manager for SIH graduate on shared hooks). Fork your own proxy set; register only on the Registry in your fork.json.",
+  "note": "Default fork-deploy source. Includes Bonding V1, Bonding Tax V1 (Royalty / ForwardVault), and Stock4 Tax (create + tax → ForwardVault; fork deploys Manager + sandbox SIH for self-serve graduate). Fork your own proxy set; register only on the Registry in your fork.json.",
   "deployedAt": "2026-11-02T06:08:56.479Z",
   "addresses": {
     "registry": "0xE5014c0616e528B0ABF7CC120A58032c1FbE7060",
@@ -33,18 +33,13 @@
   },
   "forwardVaultTypeId": "0x31305495a6a67b3607bd1db8a49c23bbd2dc1d0fc23df7f46f7c94da62d6c99a",
   "stock4Sih": {
-    "hookOwner": "0x08AcD5111029Cda541e271B1668223d722edaA25",
-    "monitor": "0x5d9bb0D58783B614EE90A8d5C738866F01aa5498",
-    "hook": "0x56Dc026b9ac8a00ADDBA296e32fE603497AfDD4c",
-    "taxLiquidityHelper": "0x2AC52dA4f09d25eeeF70f0AC333bDD17eA67A9f4",
+    "poolManager": "0x36A12c70c9Cf64f24E89ee132BF93Df2DCD199d4",
     "extraSihRoutes": [
       "0xCAf8908B9bF1D577008Bef7643f2E8dB13c52Fc1",
       "0xaed3B7E5C623d6cFc694492e7774aC05922e8969"
     ],
     "quotes": [
       "0xB179cBFdE44a9960Dd6C88bC3D163d36C65ae7C9"
-    ],
-    "hubManager": "0xC6fA93D8D3294700b1e006D70d4554B18fA8f299",
-    "hubMigrateImpl": "0x93D8578566A686148B0A7FD92e7fEe9ABc4d779f"
+    ]
   }
 }

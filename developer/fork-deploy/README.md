@@ -30,7 +30,7 @@ Use this preset when you need:
 - Bonding **quote tax** into **ForwardVault** (same Unverified Royalty path as Bonding Tax V1)
 - **Graduation into a PancakeSwap Infinity Shared Inventory Hook (SIH)** pool (meme / Stock4)
 
-On `npm run fork`, the toolkit deploys a **per-fork `Stock4SihManager` bound to your Core** and reuses the **shared SIH hook** (no hook clone), then points `MIGRATE_BONDING_TAX_PCS_SIH` at a migrate module wired to that Manager. Deploy bytecode is in [`artifacts/`](./artifacts/). Quote must be listed under `source.stock4Sih.quotes` (default: BNC4). If your deployer is not the hookOwner admin, fork still writes the new manager address — an admin must grant CREATOR / CONFIG / WITHDRAW and `monitor.setOperator` before migrate works.
+On `npm run fork`, the toolkit deploys a **per-fork `Stock4SihManager` bound to your Core** plus a **sandbox SIH set** (hook + hookOwner + monitor) owned by the deployer, wires CONFIG / CREATOR / WITHDRAW + `monitor.setOperator`, then points `MIGRATE_BONDING_TAX_PCS_SIH` at a migrate module for that Manager. Same graduate / tax behavior as production SIH; each fork gets its own hook set (no shared-hook admin). Deploy bytecode is in [`artifacts/`](./artifacts/). Quote must be listed under `source.stock4Sih.quotes` (default: BNC4).
 
 ### Get BNC4 on BSC Testnet
 
@@ -146,4 +146,4 @@ After create: `token.founder()` is ForwardVault; buy delivers tax (~6% / ~94%). 
 
 ## Scope
 
-The bundled source JSON lists public proxy addresses, module ids, the three preset ids, `taxVaultRegistry` / ForwardVault pointers, and `stock4Sih` shared-hook references used when forking Stock4. Implementations and module metadata are read from chain at runtime.
+The bundled source JSON lists public proxy addresses, module ids, the three preset ids, `taxVaultRegistry` / ForwardVault pointers, and `stock4Sih` (`poolManager`, quotes, optional routes) used when forking Stock4. Implementations and module metadata are read from chain at runtime.

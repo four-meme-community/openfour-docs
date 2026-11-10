@@ -501,7 +501,7 @@ async function main() {
   const wantsStock4Sih = source.presets.some((row) => row.key === "stock4TaxV1") && deployment.stock4Sih;
   if (wantsStock4Sih) {
     console.log(
-      `stock4 SIH: on fork will deploy Manager(Core)+Migrate, reuse hookOwner=${deployment.stock4Sih.hookOwner} quotes=${(deployment.stock4Sih.quotes || []).join(",")}`
+      `stock4 SIH: on fork will deploy Manager(Core)+Migrate + sandbox hook set; quotes=${(deployment.stock4Sih.quotes || []).join(",")}`
     );
   }
 
@@ -706,7 +706,7 @@ async function main() {
           moduleId: migrateMod.moduleId,
           version: migrateMod.version || "1.0.0",
           name: migrateMod.name,
-          description: migrateMod.description || "Graduation into shared SIH via fork Manager",
+          description: migrateMod.description || "Graduation into sandbox SIH via fork Manager",
           author: wallet.address,
           feeShareBps: migrateMod.feeShareBps,
         },

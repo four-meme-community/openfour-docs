@@ -109,7 +109,7 @@ Default fork input is `developer/fork-deploy/source/bsctestnet.json`. Fork your 
 | --- | --- | --- |
 | **Bonding V1** | [`OpenFourToken.sol`](../../../contracts/token/OpenFourToken.sol) | Standard bonding create / trade / migrate smoke |
 | **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | TaxToken + **ForwardVault** Unverified Royalty (WBNB / ERC20) |
-| **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | Stock4 tax + ForwardVault; migrate → Infinity SIH |
+| **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | Stock4 tax + ForwardVault; migrate → **sandbox** Infinity SIH (self-wired on fork) |
 
 After fork, agents can run the **smoke reference** `PRESET=bondingV1 npm run create-test-preset` (`bondingTaxV1` / `stock4TaxV1` / `all`; optional `SELL=1`, `FORWARD_VAULT=1`). Sell-out buy **auto-migrates**. Not a product client — details: [`fork-deploy/README.md`](../../fork-deploy/README.md#create--buy--sell--migrate-built-in-presets).
 
