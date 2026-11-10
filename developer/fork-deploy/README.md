@@ -30,7 +30,7 @@ Use this preset when you need:
 - Bonding **quote tax** into **ForwardVault** (same Unverified Royalty path as Bonding Tax V1)
 - **Graduation into a PancakeSwap Infinity Shared Inventory Hook (SIH)** pool (meme / Stock4)
 
-On `npm run fork`, the toolkit deploys a **per-fork `Stock4SihManager` bound to your Core** and reuses the **shared SIH hook** (no hook clone), then points `MIGRATE_BONDING_TAX_PCS_SIH` at a migrate module wired to that Manager. Quote must be listed under `source.stock4Sih.quotes` (default: BNC4). If your deployer is not the hookOwner admin, fork still writes the new manager address — an admin must grant CREATOR / CONFIG / WITHDRAW and `monitor.setOperator` before migrate works.
+On `npm run fork`, the toolkit deploys a **per-fork `Stock4SihManager` bound to your Core** and reuses the **shared SIH hook** (no hook clone), then points `MIGRATE_BONDING_TAX_PCS_SIH` at a migrate module wired to that Manager. Deploy bytecode is in [`artifacts/`](./artifacts/). Quote must be listed under `source.stock4Sih.quotes` (default: BNC4). If your deployer is not the hookOwner admin, fork still writes the new manager address — an admin must grant CREATOR / CONFIG / WITHDRAW and `monitor.setOperator` before migrate works.
 
 ### Get BNC4 on BSC Testnet
 
