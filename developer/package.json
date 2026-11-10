@@ -12,6 +12,7 @@
     "setup": "node scripts/setup.js",
     "fork": "npm run fork -w openfour-fork-deploy",
     "fork:dry": "npm run fork:dry -w openfour-fork-deploy",
+    "create-test-preset": "npm run create-test-preset -w openfour-fork-deploy",
     "compile": "npm run compile -w openfour-startup",
     "test": "npm run test -w openfour-startup",
     "register": "npm run register -w openfour-startup",

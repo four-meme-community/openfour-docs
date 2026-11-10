@@ -81,21 +81,37 @@ Copy that file to `developer/workbench/data/fork.json` for the Workbench / start
 
 Never commit `.env`, private keys, or files under `out/`.
 
-## Create with the three built-in presets
+## Create / buy / sell / migrate (built-in presets)
 
-After `fork.json` is imported, the bundled presets are create-ready (no extra `register.js` for these).
+After `npm run fork`, the three presets are create-ready (no `register.js`).
 
-1. Start Workbench: `cd developer && npm run workbench`
-2. Open **Create**, pick a preset from the fork list:
-   - **Bonding V1** — standard OpenFourToken bonding
-   - **Bonding Tax V1** — TaxToken + ForwardVault Royalty (WBNB quote OK)
-   - **Stock4 Tax V1** — Stock4TaxToken + ForwardVault; set `quoteAsset` = **BNC4**; after bonding, migrate to exercise **SIH**
-3. Fill schema fields from `OpenFourTools.getPresetEncodeSchemas(presetId)`, sign as `Core.signer` (fork deployer by default), then create. For amounts, use the table below (Tools defaults are not always valid for Stock4).
-4. Use **Tokens** for buy / sell / migrate checks. Records append to `workbench/data/tokens.json`.
+**`create-test-preset.js` is a smoke-flow reference** (fixed demo amounts, minimal tax params). Use it to verify fork → create → trade → auto-migrate. It is not a product SDK; build real UIs / apps against Core + Tools schemas (Workbench or your own client).
 
-Preset ids are also in `fork.json` → `presets.bondingV1` / `presets.bondingTaxV1` / `presets.stock4TaxV1`.
+```bash
+cd developer/fork-deploy   # or: cd developer && npm run create-test-preset
+cp out/fork-deployment.json ../workbench/data/fork.json   # if using Workbench
 
-FairLaunch and other custom presets still go through `developer/startup` (`PRESET=…` → `register.js` → `create-and-trade.js`); that path is separate from these bundled examples.
+PRESET=bondingV1 npm run create-test-preset
+PRESET=bondingTaxV1 npm run create-test-preset
+PRESET=stock4TaxV1 npm run create-test-preset   # needs BNC4 — see Get BNC4
+PRESET=all npm run create-test-preset
+
+SELL=1 PRESET=bondingV1 npm run create-test-preset          # optional sell leg
+FORWARD_VAULT=1 TAX_VAULT_TEMPLATE=0xYourTemplate \
+  PRESET=bondingTaxV1 npm run create-test-preset            # optional Royalty
+```
+
+| Step | Smoke behavior |
+| --- | --- |
+| Create | Schema from Tools; sign as `Core.signer`; `createToken` |
+| Buy | `buyByBudget` until `isSoldOut` (~`3 × raiseAmount` budget) |
+| Sell | If `SELL=1`: partial buy → sell ~90% → buy to sell-out |
+| Migrate | Usually **auto** on sell-out buy (`phase = Migrated`); do not call `migrate` again |
+| ForwardVault | Optional: `FORWARD_VAULT=1` + template — [below](#forwardvault-optional-tax-presets) |
+
+Writes `out/create-test-preset-result.json` and appends `workbench/data/tokens.json`.
+
+FairLaunch / custom presets: `developer/startup` (`register.js` → `create-and-trade.js`), not this script.
 
 ### Create amounts (hub validators)
 
@@ -106,23 +122,27 @@ Use a small `raiseAmount` to save test quote (Tools default `18` is optional). S
 | Bonding V1 / Bonding Tax V1 | **> `saleAmount`** | **1e5 – 1e11** | **≥ 0.1** | `maxSupply=1e10`, `saleAmount=8e9`, `raiseAmount=0.1` | WBNB / any ERC20 |
 | Stock4 Tax V1 | **> `saleAmount`** | **1e3 – 1e9** | **≥ 0.1** | `maxSupply=1e9`, `saleAmount=8e8`, `raiseAmount=0.1` | BNC4 only — see [Get BNC4](#get-bnc4-on-bsc-testnet) |
 
-## Develop and test ForwardVault on a tax preset
+## ForwardVault (optional, Tax presets)
 
-Use this when building an **unverified TaxVault template** (6% / 94% royalty split).
+Default `create-test-preset` uses founder = deployer (no Royalty wrapper). To exercise **Unverified Royalty / ForwardVault**:
 
-1. **Fork** as above so your Registry has Bonding Tax V1 and/or Stock4 Tax V1 + `taxVaultRegistry` / ForwardVault.
-2. **Implement** a clone-compatible template: inherit `contracts/taxvault/BaseTaxVault.sol`, implement `_customInit`, `authorWallet()`, `moduleEncodeSchema()`, and payable `receive()`. Follow [Unverified Royalty](../../docs/mechanisms/unverified-royalty.md).
-3. **Deploy** the template implementation to BSC Testnet (same deployer key as the fork is fine).
-4. **Create** with **Bonding Tax V1** or **Stock4 Tax V1**:
-   - `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`
-   - Outer vault params `abi.encode(template, initData)`
-   - Configure buy/sell tax so trades pay into the founder vault
-   - Stock4 Tax: `quoteAsset` = BNC4 (or another allowlisted Stock4)
-5. **Verify** after create: TaxToken / Stock4TaxToken path; `founder` is ForwardVault; `clonedVault()` / `authorWallet()` look right.
-6. **Trade** (buy) so tax is delivered; confirm ~6% / ~94% split.
-7. **(Stock4 only)** Migrate when ready to open the meme on the **shared SIH hook** (Infinity inventory pool). Post-migrate tax is withheld by the hook into quote and still dispatches to ForwardVault.
+1. Implement + deploy a template (`BaseTaxVault`) — [Unverified Royalty](../../docs/mechanisms/unverified-royalty.md).
+2. Create with Tax preset + ForwardVault flag:
 
-For audit submit of a new Royalty template, include contract source, schema notes, and create/trade evidence. If the template needs extra product UI, build a temporary page with `developer/frontend-style/` as reference; OpenFour ports approved flows into the website after review.
+```bash
+FORWARD_VAULT=1 TAX_VAULT_TEMPLATE=0xYourTemplate \
+  TAX_VAULT_INIT_DATA=0x \   # or abi-encoded inner initData
+  PRESET=bondingTaxV1 npm run create-test-preset
+# or PRESET=stock4TaxV1 (BNC4)
+```
+
+| Env | Required | Meaning |
+| --- | --- | --- |
+| `FORWARD_VAULT=1` | yes | set `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` |
+| `TAX_VAULT_TEMPLATE` | yes | template implementation address |
+| `TAX_VAULT_INIT_DATA` | no | inner `initData` hex; default `0x`. Script wraps `abi.encode(template, initData)` |
+
+After create: `token.founder()` is ForwardVault; buy delivers tax (~6% / ~94%). Stock4 sell-out still auto-migrates to SIH; post-migrate tax stays on the ForwardVault path.
 
 ## Scope
 

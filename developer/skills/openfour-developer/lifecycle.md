@@ -2,7 +2,14 @@
 
 The wallet / script signer must be `Core.signer()`. After a fork that is the deployer by default. Keep the list in `tokens.json` only. Do not use `getLogs` as a data source.
 
-The example loop is `developer/startup/scripts/create-and-trade.js` after `register.js`, both keyed by `PRESET` / `presets/<id>.json`. Params are encoded from the on-chain schema.
+Two create paths:
+
+| Path | When | Command |
+| --- | --- | --- |
+| **Built-in smoke reference** | Right after `npm run fork` | `PRESET=bondingV1 npm run create-test-preset` — [`fork-deploy/README.md`](../../fork-deploy/README.md#create--buy--sell--migrate-built-in-presets) |
+| **FairLaunch / custom** | After `register.js` | `developer/startup` `create-and-trade.js` |
+
+`create-test-preset` is smoke only (demo amounts). Flow: create → buy to sell-out → optional `SELL=1` → **auto-migrate**; optional `FORWARD_VAULT=1 TAX_VAULT_TEMPLATE=0x…`. For production-shaped clients, encode from Tools schemas yourself (below) or use Workbench.
 
 ## createToken
 

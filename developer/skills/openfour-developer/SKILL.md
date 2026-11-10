@@ -85,13 +85,17 @@ Follow [register.md](register.md) and register only on the fork. Done when:
 
 ## Phase 4 — Create and trade
 
-Follow [lifecycle.md](lifecycle.md). Done when:
+Follow [lifecycle.md](lifecycle.md).
+
+For the **three built-in presets** after fork: run the **smoke reference** `PRESET=bondingV1|bondingTaxV1|stock4TaxV1|all npm run create-test-preset` (optional `SELL=1`, `FORWARD_VAULT=1` + template). Not a product client. [fork-deploy README](../../fork-deploy/README.md#create--buy--sell--migrate-built-in-presets).
+
+Done when:
 
 - `createToken` static precheck and broadcast succeed, and the token address is parsed.
 - The record is written to `developer/workbench/data/tokens.json`.
 - `estimateBuy` / `buy` or `buyByBudget` succeeds, and vault accounting matches expectations.
-- If the preset allows sells: `estimateSell` / `sell` succeeds.
-- `migrate` succeeds after graduation conditions, or the run notes why this preset does not migrate.
+- If the preset allows sells: `estimateSell` / `sell` succeeds (or `SELL=1` on create-test-preset).
+- Vault reaches Migrated via sell-out buy (auto) or an explicit `migrate`, or the run notes why this preset does not migrate.
 
 ## Phase 5 — Verify
 

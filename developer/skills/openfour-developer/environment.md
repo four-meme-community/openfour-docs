@@ -98,24 +98,20 @@ Rules:
 - `DRY_RUN=1` is read-only and does not broadcast.
 - `chainId` 56 / 4663 is forbidden.
 - After success, copy `out/fork-deployment.json` to `developer/workbench/data/fork.json`.
-- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, standard + tax `moduleIds`, and bundled presets: `presets.bondingV1`, `presets.bondingTaxV1`, and `presets.stock4TaxV1`.
+- Verify `addresses.registry`, `addresses.core`, `addresses.feeRouter`, standard + tax `moduleIds`, and built-in presets: `presets.bondingV1`, `presets.bondingTaxV1`, and `presets.stock4TaxV1`.
 - With the deployer key, read `Registry.owner()`, `Core.signer()`, and `Core.wrappedNative()` and confirm they match expectations.
 
 Default fork input is `developer/fork-deploy/source/bsctestnet.json`. Fork your own proxy set and register only on the Registry in your `fork.json`.
 
-### Bundled example presets (no extra register)
-
-After fork, create immediately in Workbench — three presets:
+### Built-in example presets (no extra register)
 
 | Preset | Token | What to test |
 | --- | --- | --- |
 | **Bonding V1** | [`OpenFourToken.sol`](../../../contracts/token/OpenFourToken.sol) | Standard bonding create / trade / migrate smoke |
-| **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | TaxToken + **ForwardVault** Unverified Royalty (WBNB quote OK) |
-| **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | **Stock4 tax token** (BNC4 quote) + ForwardVault bonding tax; **migrate → Infinity SIH** |
+| **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | TaxToken + **ForwardVault** Unverified Royalty (WBNB / ERC20) |
+| **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | Stock4 tax + ForwardVault; migrate → Infinity SIH |
 
-Create amounts / quote (small `raiseAmount`, Stock4 `saleAmount≤1e9`, BNC4): [`fork-deploy/README.md`](../../fork-deploy/README.md#create-amounts-hub-validators).
-
-Royalty / ForwardVault: implement under `contracts/taxvault/` → Create with Bonding Tax V1 or Stock4 Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`. Details: [`developer/fork-deploy/README.md`](../../fork-deploy/README.md), [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md), [4Stock → bStock](../../../docs/mechanisms/4stock-to-bstock-SIH.md).
+After fork, agents can run the **smoke reference** `PRESET=bondingV1 npm run create-test-preset` (`bondingTaxV1` / `stock4TaxV1` / `all`; optional `SELL=1`, `FORWARD_VAULT=1`). Sell-out buy **auto-migrates**. Not a product client — details: [`fork-deploy/README.md`](../../fork-deploy/README.md#create--buy--sell--migrate-built-in-presets).
 
 ## Funds and network
 
