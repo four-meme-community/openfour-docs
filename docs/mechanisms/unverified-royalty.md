@@ -242,7 +242,7 @@ Every environment created with `developer/fork-deploy` ships **Bonding Tax V1** 
 4. Set `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")` and outer vault params `abi.encode(template, initData)` (Workbench / schema UI encodes the same shape as §3.3–3.4).
 5. Create, then buy so tax is paid; check ForwardVault `clonedVault()` / `authorWallet()` and the 6% / 94% split.
 
-The same fork also includes **Bonding V1** for a non-tax create smoke test. Full fork notes: [`developer/fork-deploy/README.md`](../../developer/fork-deploy/README.md).
+Create amounts: [fork-deploy](../../developer/fork-deploy/README.md#create-amounts-hub-validators). The same fork also includes **Bonding V1** for a non-tax smoke test.
 
 ### 4.3 Create on four.meme
 

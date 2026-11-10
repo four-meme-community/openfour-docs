@@ -242,7 +242,7 @@ const taxVaultInitParams = AbiCoder.defaultAbiCoder().encode(
 4. 設定 `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`，外層 vault 參數為 `abi.encode(template, initData)`（與 §3.3–3.4 相同形狀；Workbench / schema UI 會編碼）。
 5. 建立後買入以產生稅費；檢查 ForwardVault 的 `clonedVault()` / `authorWallet()` 以及約 6% / 94% 分成。
 
-同一 fork 也帶有 **Bonding V1**，可用於非稅費的建立冒煙測試。完整說明見 [`developer/fork-deploy/README.md`](../../../developer/fork-deploy/README.md)。
+建立數量見 [fork-deploy](../../../developer/fork-deploy/README.md#create-amounts-hub-validators)。同一 fork 也帶有 **Bonding V1**，可用於非稅費冒煙測試。
 
 ### 4.3 在 four.meme 建立
 

@@ -113,11 +113,13 @@ After fork, create immediately in Workbench — three presets:
 | **Bonding Tax V1** | [`TaxToken.sol`](../../../contracts/token/TaxToken.sol) | TaxToken + **ForwardVault** Unverified Royalty (WBNB quote OK) |
 | **Stock4 Tax V1** | [`Stock4TaxToken.sol`](../../../contracts/token/Stock4TaxToken.sol) | **Stock4 tax token** (BNC4 quote) + ForwardVault bonding tax; **migrate → Infinity SIH** |
 
-Royalty / ForwardVault: implement under `contracts/taxvault/` → Create with Bonding Tax V1 or Stock4 Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`. Stock4 also needs **BNC4** as quote and can graduate to SIH. Details (including how to get BNC4): [`developer/fork-deploy/README.md`](../../fork-deploy/README.md), [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md), [4Stock → bStock](../../../docs/mechanisms/4stock-to-bstock-SIH.md).
+Create amounts / quote (small `raiseAmount`, Stock4 `saleAmount≤1e9`, BNC4): [`fork-deploy/README.md`](../../fork-deploy/README.md#create-amounts-hub-validators).
+
+Royalty / ForwardVault: implement under `contracts/taxvault/` → Create with Bonding Tax V1 or Stock4 Tax V1 → `taxVaultTypeId = keccak256("SafuSkill.ForwardVault.v1")`. Details: [`developer/fork-deploy/README.md`](../../fork-deploy/README.md), [Unverified Royalty](../../../docs/mechanisms/unverified-royalty.md), [4Stock → bStock](../../../docs/mechanisms/4stock-to-bstock-SIH.md).
 
 ## Funds and network
 
 - Deploy / create / trade need test BNB (or impersonation / prefunded balances on a local fork).
 - When quote is WBNB, attach `msg.value` for `createToken` / `buy` using the Workbench native rules.
-- **Stock4 Tax V1** needs test **BNC4** (`0xB179cBFd…`); swap on Pancake V3 WBNB/BNC4 or MockU/BNC4, or buy via Stock4Exchange — see fork-deploy README.
+- **Stock4 Tax V1** needs test **BNC4**; see fork-deploy README for pools / exchange.
 - On a local anvil fork, RPC, `fork.json.rpcUrl`, and the wallet chainId must match.

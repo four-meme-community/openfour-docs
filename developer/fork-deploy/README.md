@@ -90,12 +90,21 @@ After `fork.json` is imported, the bundled presets are create-ready (no extra `r
    - **Bonding V1** — standard OpenFourToken bonding
    - **Bonding Tax V1** — TaxToken + ForwardVault Royalty (WBNB quote OK)
    - **Stock4 Tax V1** — Stock4TaxToken + ForwardVault; set `quoteAsset` = **BNC4**; after bonding, migrate to exercise **SIH**
-3. Fill schema fields from `OpenFourTools.getPresetEncodeSchemas(presetId)`, sign as `Core.signer` (fork deployer by default), then create.
+3. Fill schema fields from `OpenFourTools.getPresetEncodeSchemas(presetId)`, sign as `Core.signer` (fork deployer by default), then create. For amounts, use the table below (Tools defaults are not always valid for Stock4).
 4. Use **Tokens** for buy / sell / migrate checks. Records append to `workbench/data/tokens.json`.
 
 Preset ids are also in `fork.json` → `presets.bondingV1` / `presets.bondingTaxV1` / `presets.stock4TaxV1`.
 
 FairLaunch and other custom presets still go through `developer/startup` (`PRESET=…` → `register.js` → `create-and-trade.js`); that path is separate from these bundled examples.
+
+### Create amounts (hub validators)
+
+Use a small `raiseAmount` to save test quote (Tools default `18` is optional). Stock4 must keep `saleAmount ≤ 1e9` (Tools default `8e9` reverts).
+
+| Preset | `maxSupply` | `saleAmount` | `raiseAmount` | Suggested create | Quote |
+| --- | --- | --- | --- | --- | --- |
+| Bonding V1 / Bonding Tax V1 | **> `saleAmount`** | **1e5 – 1e11** | **≥ 0.1** | `maxSupply=1e10`, `saleAmount=8e9`, `raiseAmount=0.1` | WBNB / any ERC20 |
+| Stock4 Tax V1 | **> `saleAmount`** | **1e3 – 1e9** | **≥ 0.1** | `maxSupply=1e9`, `saleAmount=8e8`, `raiseAmount=0.1` | BNC4 only — see [Get BNC4](#get-bnc4-on-bsc-testnet) |
 
 ## Develop and test ForwardVault on a tax preset
 

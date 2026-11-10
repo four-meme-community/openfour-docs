@@ -191,4 +191,4 @@ SIH 是 **JIT 流動性**：兩次 swap 之間 CLPoolManager 中池子的 L 多�
 
 ## 9. 本地測試（開發者 fork）
 
-若要在自有 Core 上驗證 Stock4 稅幣建立、ForwardVault 與 SIH 畢業，使用 [`developer/fork-deploy`](../../../developer/fork-deploy/README.md) 內建的 **Stock4 Tax V1** preset（文檔含 BNC4 取得方式與 SIH Manager 接線說明）。僅測 ForwardVault / 版稅、不需要 Stock4 或 SIH 時，改用 **Bonding Tax V1** 即可。
+使用 [`developer/fork-deploy`](../../../developer/fork-deploy/README.md) 的 **Stock4 Tax V1**（BNC4、SIH、[建立數量](../../../developer/fork-deploy/README.md#create-amounts-hub-validators)）。僅測 ForwardVault / 不需 SIH 時用 **Bonding Tax V1**。

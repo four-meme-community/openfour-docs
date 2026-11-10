@@ -570,6 +570,18 @@ async function main() {
   await send("registry.setCreateDeployer", registry, "setCreateDeployer", [deployerAddr], protectedSet, overrides);
   await send("feeRouter.setCore", feeRouter, "setCore", [coreAddr], protectedSet, overrides);
   await send("createDeployer.setCore", createDeployer, "setCore", [coreAddr], protectedSet, overrides);
+  // Tax / founder native probe needs a tiny tBNB balance on CreateDeployer.
+  const createDeployerDust = 1_000_000_000n; // 1 gwei
+  const createDeployerBal = await provider.getBalance(deployerAddr);
+  if (createDeployerBal < createDeployerDust) {
+    const fundTx = await wallet.sendTransaction({
+      to: deployerAddr,
+      value: createDeployerDust - createDeployerBal,
+      ...overrides,
+    });
+    await fundTx.wait();
+    console.log(`  createDeployer funded ${createDeployerDust} wei (1 gwei) tBNB tx=${fundTx.hash}`);
+  }
   await send("feeRouter.setFeeConfig", feeRouter, "setFeeConfig", [source.feeConfig], protectedSet, overrides);
   if (process.env.REBATE_ADDRESS && process.env.REBATE_ADDRESS.trim() !== "") {
     await send(
