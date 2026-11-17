@@ -29,6 +29,14 @@ abstract contract BaseTaxVault is Initializable, OwnableUpgradeable, ITaxVault {
 
     // ─── ITaxVault ──────────────────────────────────────────────────────────────
 
+    modifier onlyTaxSender() {
+            require(
+                msg.sender == _taxVaultToken || msg.sender == _taxVaultInitializer,
+                "BaseTaxVault: unauthorized caller"
+            );
+            _;
+        }
+
     /// @notice Called once by TaxVaultRegistry immediately after clone.
     function initialize(
         address token,
@@ -63,11 +71,11 @@ abstract contract BaseTaxVault is Initializable, OwnableUpgradeable, ITaxVault {
     }
 
     /// @notice Handles notification after ERC20 founder tax is transferred by the bound TaxToken.
-    function onERC20TaxReceived(address asset, uint256) public virtual override {
-        require(
-            msg.sender == _taxVaultToken || msg.sender == _taxVaultInitializer,
-            "BaseTaxVault: unauthorized caller"
-        );
+    function onERC20TaxReceived(address asset, uint256) public virtual override onlyTaxSender {
+        _validateTaxVaultAsset(asset);
+    }
+
+    function _validateTaxVaultAsset(address asset) internal view {
         require(asset == _taxVaultQuote, "BaseTaxVault: wrong asset");
     }
 
@@ -77,7 +85,9 @@ abstract contract BaseTaxVault is Initializable, OwnableUpgradeable, ITaxVault {
     /// @notice Returns the fee recipient designated by the vault template developer.
     /// @dev Returning `address(0)` or `address(0xdEaD)` means the developer voluntarily
     ///      waives receiving developer tax. Each concrete vault must implement this function.
-    function authorWallet() public view virtual override returns (address);
+    function authorWallet() public view virtual override returns (address) {
+        return address(0);
+    }
 
     // ─── ETH Reception ─────────────────────────────────────────────────────────
 

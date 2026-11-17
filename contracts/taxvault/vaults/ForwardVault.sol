@@ -4,7 +4,8 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {BaseTaxVault} from "../BaseTaxVault.sol";
 import {ModuleEncodeSchema, ParamDescriptor} from "../../libraries/OpenFourTypes.sol";
 
@@ -45,7 +46,6 @@ contract ForwardVault is BaseTaxVault, ReentrancyGuardUpgradeable {
 
     address public template;
     address public clonedVault;
-    address private _authorWallet;
 
     enum RevenueAsset {
         Unset,
@@ -77,18 +77,6 @@ contract ForwardVault is BaseTaxVault, ReentrancyGuardUpgradeable {
         _disableInitializers();
     }
 
-    modifier onlyTaxSender() {
-        require(
-            msg.sender == _taxVaultToken || msg.sender == _taxVaultInitializer,
-            "BaseTaxVault: unauthorized caller"
-        );
-        _;
-    }
-
-    function _validateTaxVaultAsset(address asset) internal view {
-        require(asset == _taxVaultQuote, "BaseTaxVault: wrong asset");
-    }
-
     receive() external payable override onlyTaxSender nonReentrant {
         _ensureRevenueAsset(RevenueAsset.Native);
         emit Received(msg.sender, msg.value);
@@ -107,7 +95,7 @@ contract ForwardVault is BaseTaxVault, ReentrancyGuardUpgradeable {
     }
 
     /// @notice Routes ERC20 tax received from the bound TaxToken.
-    /// @dev Uses the actual balance so fee-on-transfer quote tokens are handled correctly.
+    /// @dev Uses the actual balance of asset so fee-on-transfer tokens are handled correctly.
     function onERC20TaxReceived(address asset, uint256)
         public
         virtual
@@ -115,7 +103,6 @@ contract ForwardVault is BaseTaxVault, ReentrancyGuardUpgradeable {
         onlyTaxSender
         nonReentrant
     {
-        _validateTaxVaultAsset(asset);
         _ensureRevenueAsset(RevenueAsset.ERC20);
 
         uint256 balance = IERC20(asset).balanceOf(address(this));
@@ -159,12 +146,8 @@ contract ForwardVault is BaseTaxVault, ReentrancyGuardUpgradeable {
             revert InvalidClonedVault();
         }
 
-        _authorWallet = _readAuthorWallet();
+        _readAuthorWallet();
         emit VaultCloned(p.template, clone);
-    }
-
-    function authorWallet() public view override returns (address) {
-        return _authorWallet;
     }
 
     function moduleEncodeSchema() external pure override returns (ModuleEncodeSchema memory) {
